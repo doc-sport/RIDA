@@ -341,7 +341,7 @@ select{font-size:13.5px}
 
 <script>
 'use strict';
-const VERSION='3.9.3';
+const VERSION='3.9.4';
 // --- diagnostic : affiche toute erreur JavaScript en bandeau rouge ---
 window.addEventListener('error', e=>{
   try{
@@ -1129,6 +1129,7 @@ function htmlReglages(){
     ${isFile?`<div class="note">Le fichier est ouvert en local (file://). Google exige que l'application soit hébergée en https pour autoriser la connexion. En attendant, utilise l'export / import ci-dessous — je t'explique l'hébergement quand tu veux.</div>`:''}
     <label>Identifiant client Google (Client ID)</label>
     <input id="r-cid" value="${echap(s.clientId)}" placeholder="xxxxx.apps.googleusercontent.com">
+    <div id="r-diag" class="note" style="background:#EEF1F5;color:var(--ink);font-family:'IBM Plex Mono';font-size:11px;word-break:break-all">${diagCid()}</div>
     <button class="btn" id="r-connect" ${isFile?'disabled':''} onclick="drive.connecter()">${drive.token?'Reconnecter':'Se connecter à Drive'}</button>
     <button class="btn sec" ${isFile?'disabled':''} onclick="drive.synchroniser()">Synchroniser maintenant</button>
     <div class="toggle">Synchronisation automatique
@@ -1169,9 +1170,16 @@ function htmlReglages(){
     <button class="btn danger" onclick="toutEffacer()">Effacer toutes les données de cet appareil</button>
   </div>`;
 }
+function diagCid(){
+  const c=(etat.settings.clientId||'').replace(/\s+/g,'');
+  if(!c) return 'Aucun identifiant mémorisé.';
+  const m=c.match(/^(\d+)-([a-z0-9]+)\.apps\.googleusercontent\.com$/i);
+  const ok = m? '✅ format correct' : '❌ FORMAT INCORRECT — il manque ou il y a des caractères en trop';
+  return 'Mémorisé ('+c.length+' caractères) : '+c+'\n'+ok+(m? ' — projet '+m[1]+', clé de '+m[2].length+' caractères (32 attendus)':'');
+}
 function initReglages(){
   const cid=$('r-cid');
-  if(cid) cid.oninput=()=>{ etat.settings.clientId=cid.value.replace(/\s+/g,''); persister(false); };
+  if(cid) cid.oninput=()=>{ etat.settings.clientId=cid.value.replace(/\s+/g,''); persister(false); const dg=$('r-diag'); if(dg) dg.textContent=diagCid(); };
 }
 function choisirEquipe(tEnc){
   const t=decodeURIComponent(tEnc);
