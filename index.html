@@ -93,6 +93,12 @@ main{max-width:880px;margin:0 auto;padding:14px 14px 30px}
 .raci-l.on.lI{background:#5C6C7B}
 .rchip{font-size:11.5px;font-weight:500;background:#EEF1F5;border-radius:999px;padding:2px 8px}
 .rchip b{font-weight:800}
+a.rchip.lienc{color:var(--accent);text-decoration:none;font-weight:600}
+.lien-row{display:flex;align-items:center;gap:8px;background:#F6F8FA;border-radius:9px;padding:6px 10px;margin-top:6px;font-size:13px}
+.lien-row .ln{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lien-row .lu{color:var(--muted);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.lien-row button{color:var(--warn);font-size:15px}
+a.rchip.lienc:hover{background:var(--accent-soft)}
 .rchip.lR b{color:var(--accent)}
 .rchip.lA b{color:var(--amber)}
 .rchip.lC b{color:var(--ok)}
@@ -295,6 +301,10 @@ select{font-size:13.5px}
         <input type="date" id="e-dprev" style="display:none;margin-top:6px">
       </div>
       <div><label>Avancement : <span id="e-av-val">0</span>/10</label><input type="range" id="e-avct" min="0" max="10" step="1" value="0" style="padding:0;border:none"></div>
+      <div class="full"><label>Liens web</label>
+        <div id="e-liens"></div>
+        <div class="com-add"><input id="e-lien-n" placeholder="Nom (ex : CR réunion)"><input id="e-lien-u" type="url" placeholder="https://…"><button onclick="ajouterLien()">+</button></div>
+      </div>
       <div class="full" id="e-com-bloc">
         <label>Commentaires (suivi daté)</label>
         <div id="e-coms"></div>
@@ -331,7 +341,20 @@ select{font-size:13.5px}
 
 <script>
 'use strict';
-const VERSION='3.7';
+const VERSION='3.9.2';
+// --- diagnostic : affiche toute erreur JavaScript en bandeau rouge ---
+window.addEventListener('error', e=>{
+  try{
+    let b=document.getElementById('diag');
+    if(!b){ b=document.createElement('div'); b.id='diag';
+      b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:#C8401A;color:#fff;font:12px/1.4 monospace;padding:8px 12px;white-space:pre-wrap';
+      document.body.appendChild(b); }
+    b.textContent+='ERREUR : '+(e.message||e.type)+' — ligne '+(e.lineno||'?')+'\n';
+  }catch(x){}
+});
+window.addEventListener('unhandledrejection', e=>{
+  try{ window.dispatchEvent(new ErrorEvent('error',{message:'(promesse) '+(e.reason&&e.reason.message||e.reason)})); }catch(x){}
+});
 /* ============================================================
    RIDA — application personnelle d'Eric
    Stockage local + synchronisation Google Drive (drive.file)
@@ -348,6 +371,7 @@ let etat = charger();
 let vue = 'encours';
 let editId = null;      // id en cours d'édition, null = création
 let editComs = [];      // commentaires du brouillon
+let editLiens = [];     // liens web du brouillon
 let filtres = {q:'', theme:'', stheme:'', ress:'', type:'', tri:'prio', jour:false};
 
 function charger(){
@@ -533,7 +557,7 @@ function carte(i){
            <button class="mini" onclick="editerItem('${i.id}')">✎</button>`}
       </span>
     </div>
-    <div class="l2" onclick="editerItem('${i.id}')">${echap(i.texte)} ${raciChips(i)}</div>
+    <div class="l2" onclick="editerItem('${i.id}')">${echap(i.texte)} ${raciChips(i)}${lienChip(i)}</div>
     ${dernierCom?`<div class="com"><span class="d">${fmtDate(dernierCom.d)}${(i.comments.length>1)?' · '+i.comments.length+' commentaires':''}</span>${echap(dernierCom.t)}</div>`:''}
   </div>`;
 }
@@ -547,6 +571,11 @@ function faireCeJour(id){
 /* ---------- actions sur items ---------- */
 function trouver(id){ return etat.items.find(i=>i.id===id); }
 function personnesDe(i){ const st=new Set(Object.keys(i.raci||{})); if(i.ressource) st.add(i.ressource); return [...st]; }
+function lienChip(i){
+  const liens=(i.liens&&i.liens.length)? i.liens : (i.lien? [{n:'',u:i.lien}] : []);
+  return liens.filter(l=>/^https?:\/\//i.test(l.u)).map(l=>
+    ` <a class="rchip lienc" href="${echap(l.u)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="${echap(l.u)}">🔗 ${echap(l.n||domaine(l.u))}</a>`).join('');
+}
 function raciChips(i){
   const r=i.raci||{}; const ordre={R:0,A:1,C:2,I:3};
   const paires=Object.entries(r).sort((a,b)=>(ordre[a[1]]-ordre[b[1]])||a[0].localeCompare(b[0]));
@@ -677,6 +706,8 @@ function setDateForm(iso){
 function getDateForm(){ const v=$('e-dsel').value; return v==='custom'? $('e-dprev').value : v; }
 function nouvelItem(prefill={}){
   editId=null; editComs=[]; editRaci=Object.assign({}, prefill.raci||{});
+  editLiens=(prefill.liens||[]).slice();
+  if(prefill.lien) editLiens.push({n:'',u:prefill.lien});
   remplirSelects();
   $('e-titre').firstChild.textContent = 'Nouvelle entrée ';
   $('e-texte').value = prefill.texte||'';
@@ -689,13 +720,15 @@ function nouvelItem(prefill={}){
   setDateForm(prefill.datePrev||'');
   $('e-avct').value = 0; $('e-av-val').textContent='0';
   $('e-suppr').style.display='none';
-  majRaci(); rendreComs();
+  $('e-lien-n').value=''; $('e-lien-u').value='';
+  majRaci(); rendreComs(); rendreLiens();
   ouvrir('v-edit');
   setTimeout(()=>$('e-texte').focus(),80);
 }
 function editerItem(id){
   const i=trouver(id); if(!i) return;
   editId=id; editComs=JSON.parse(JSON.stringify(i.comments||[])); editRaci=Object.assign({}, i.raci||{});
+  editLiens=(i.liens? JSON.parse(JSON.stringify(i.liens)) : (i.lien? [{n:'',u:i.lien}] : []));
   remplirSelects();
   $('e-titre').firstChild.textContent='Modifier ';
   $('e-texte').value=i.texte; setChamp('e-type',i.type); setChamp('e-theme',i.theme||'');
@@ -703,10 +736,27 @@ function editerItem(id){
   setChamp('e-prio',String(i.priorite)); setTempsForm(i.temps||0);
   setDateForm(i.datePrev||''); $('e-avct').value=i.avancement; $('e-av-val').textContent=i.avancement;
   $('e-suppr').style.display='block';
-  majRaci(); rendreComs();
+  $('e-lien-n').value=''; $('e-lien-u').value='';
+  majRaci(); rendreComs(); rendreLiens();
   ouvrir('v-edit');
 }
 $('e-avct') && ($('e-avct').oninput = e=>$('e-av-val').textContent=e.target.value);
+function normLien(u){
+  u=(u||'').trim();
+  if(u && !/^https?:\/\//i.test(u)) u='https://'+u;
+  return /^https?:\/\//i.test(u)? u : '';
+}
+function domaine(u){ try{ return new URL(u).hostname.replace(/^www\./,''); }catch(e){ return 'lien'; } }
+function rendreLiens(){
+  $('e-liens').innerHTML = editLiens.map((l,k)=>`<div class="lien-row">🔗 <span class="ln">${echap(l.n||domaine(l.u))}</span><span class="lu">${echap(l.u)}</span><button onclick="editLiens.splice(${k},1);rendreLiens()" title="Retirer">×</button></div>`).join('');
+}
+function ajouterLien(){
+  const u=normLien($('e-lien-u').value);
+  if(!u){ toast('Adresse web invalide'); return; }
+  editLiens.push({n:$('e-lien-n').value.trim(), u});
+  $('e-lien-n').value=''; $('e-lien-u').value='';
+  rendreLiens();
+}
 function rendreComs(){
   $('e-coms').innerHTML = editComs.map(c=>`<div class="com"><span class="d">${fmtDate(c.d)}</span>${echap(c.t)}</div>`).join('') || '<div style="font-size:13px;color:var(--muted)">Aucun commentaire.</div>';
 }
@@ -717,7 +767,10 @@ function ajouterCom(){
 function sauverEdit(){
   const texte=$('e-texte').value.trim();
   if(!texte){ toast('La description est vide'); return; }
-  const data={ texte, type:$('e-type').value, theme:$('e-theme').value, sousTheme:$('e-stheme').value,
+  const uRestant=normLien($('e-lien-u').value);
+  if(uRestant) editLiens.push({n:$('e-lien-n').value.trim(), u:uRestant});
+  $('e-lien-n').value=''; $('e-lien-u').value='';
+  const data={ texte, liens:editLiens.slice(), lien:'', type:$('e-type').value, theme:$('e-theme').value, sousTheme:$('e-stheme').value,
     ressource:$('e-ress').value, raci:Object.assign({},editRaci), priorite:+$('e-prio').value, temps:getTempsForm(),
     datePrev:getDateForm(), avancement:+$('e-avct').value, comments:editComs, upd:Date.now() };
   if(editId){ Object.assign(trouver(editId), data); if(data.avancement===10&&!trouver(editId).done){trouver(editId).done=true;trouver(editId).dateFin=auj();} }
@@ -1165,7 +1218,7 @@ function impJSON(f){
 function ligneExcel(i){
   return { 'Date inscription': i.cre? fmtDate(i.cre.slice(0,10)):'', 'RIDA': i.type, 'Thème': i.theme, 'Sous-Thème': i.sousTheme,
     'RIDA ERIC': i.texte, 'Avanct 1-10': i.avancement, 'Date prev': fmtDate(i.datePrev), 'Date finalisation': fmtDate(i.dateFin),
-    'Priorisation': i.priorite, 'Temps': i.temps? (i.temps/60):'', 'Ressource': i.ressource,
+    'Priorisation': i.priorite, 'Temps': i.temps? (i.temps/60):'', 'Ressource': i.ressource, 'Liens': ((i.liens&&i.liens.length)? i.liens.map(l=>(l.n?l.n+' : ':'')+l.u).join(' | ') : (i.lien||'')),
     'Commentaire': (i.comments||[]).map(c=>fmtDate(c.d)+' : '+c.t).join(' | ') };
 }
 function expExcel(){
