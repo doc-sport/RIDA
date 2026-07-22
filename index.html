@@ -341,7 +341,7 @@ select{font-size:13.5px}
 
 <script>
 'use strict';
-const VERSION='4.0';
+const VERSION='4.1';
 // --- diagnostic : affiche toute erreur JavaScript en bandeau rouge ---
 window.addEventListener('error', e=>{
   try{
@@ -1319,6 +1319,7 @@ const drive = {
   async pousser(){
     if(!drive.token) return;
     const corps=JSON.stringify(etat);
+    drive.pousseA=etat.updatedAt;
     let id=await drive.trouverFichier();
     if(id){ await drive.api('https://www.googleapis.com/upload/drive/v3/files/'+id+'?uploadType=media',{method:'PATCH',headers:{'Content-Type':'application/json'},body:corps}); }
     else{
@@ -1339,7 +1340,7 @@ const drive = {
     etat.settings=Object.assign({}, distant.settings||{}, {fileId:st.fileId, clientId:st.clientId, autoSync:st.autoSync});
     etat.lists=Object.assign({},DEFAUTS,etat.lists||{});
     etat.notes=etat.notes||{}; etat.equipes=etat.equipes||{}; etat.sthemes=etat.sthemes||{};
-    persister(false,false); rendre();
+    persister(false,false); drive.pousseA=etat.updatedAt; rendre();
   },
   async lireDistant(){
     const id=await drive.trouverFichier();
@@ -1375,6 +1376,26 @@ const drive = {
     if(e && e.message==='auth') toast('Session Drive expirée — reconnecte-toi');
     else toast('Erreur de synchronisation');
   },
+  pousseA:0, _auto:false,
+  // Vérification automatique à l'ouverture et au retour sur l'appli
+  async verifier(){
+    if(!drive.token || drive._auto) return;
+    drive._auto=true;
+    try{
+      const distant=await drive.lireDistant();
+      if(!distant){ drive._auto=false; return; }
+      if((distant.updatedAt||0) <= (etat.updatedAt||0)){ drive._auto=false; return; }
+      // le Drive est plus récent que cet appareil
+      const enAttente = !drive.vide(etat) && etat.updatedAt !== drive.pousseA;
+      if(enAttente){
+        // des modifications locales n'ont pas encore été envoyées : on ne touche à rien
+        toast('Drive plus récent — vérifie dans Réglages'); drive._auto=false; return;
+      }
+      drive.appliquer(distant);
+      toast('Données à jour depuis Drive ✓');
+    }catch(e){ /* silencieux */ }
+    drive._auto=false;
+  },
   // Synchronisation raisonnée, sans écrasement aveugle
   async synchroniser(silence){
     if(!drive.token){ await drive.connecter(); return; }
@@ -1383,7 +1404,7 @@ const drive = {
       if(!distant){ await drive.pousser(); if(!silence) toast('Envoyé sur Drive ✓'); return; }
       const locVide=drive.vide(etat), disVide=drive.vide(distant);
       // appareil vide, Drive plein : on récupère, jamais l'inverse
-      if(locVide && !disVide){ drive.appliquer(distant); toast('Données récupérées depuis Drive ✓'); return; }
+      if(locVide && !disVide){ drive.appliquer(distant); drive.pousseA=etat.updatedAt; toast('Données récupérées depuis Drive ✓'); return; }
       if(!locVide && disVide){ await drive.pousser(); if(!silence) toast('Envoyé sur Drive ✓'); return; }
       if(locVide && disVide){ if(!silence) toast('Rien à synchroniser'); return; }
       // les deux ont du contenu : le plus récent gagne, avec confirmation
@@ -1421,6 +1442,11 @@ try{
 }catch(e){}
 
 rendre();
+
+// Rapatriement automatique : au retour sur l'appli et lors d'une reconnexion réseau
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) drive.verifier(); });
+window.addEventListener('focus', ()=>drive.verifier());
+window.addEventListener('online', ()=>drive.verifier());
 </script>
 </body>
 </html>
