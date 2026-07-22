@@ -341,7 +341,7 @@ select{font-size:13.5px}
 
 <script>
 'use strict';
-const VERSION='4.1';
+const VERSION='4.2';
 // --- diagnostic : affiche toute erreur JavaScript en bandeau rouge ---
 window.addEventListener('error', e=>{
   try{
@@ -1288,7 +1288,46 @@ function impExcel(f){
    GOOGLE DRIVE (scope drive.file)
    ============================================================ */
 const drive = {
-  token:null, _deb:null,
+  token:null, exp:0, _deb:null,
+  memoToken(t, dureeS){
+    drive.token=t; drive.exp=Date.now()+((dureeS||3600)-120)*1000;
+    try{ localStorage.setItem('rida_tok', JSON.stringify({t:t, e:drive.exp})); }catch(x){}
+    const d=$('sync-dot'); if(d) d.classList.add('on');
+  },
+  oublierToken(){
+    drive.token=null; drive.exp=0;
+    try{ localStorage.removeItem('rida_tok'); }catch(x){}
+    const d=$('sync-dot'); if(d) d.classList.remove('on');
+  },
+  restaurerToken(){
+    try{ const j=JSON.parse(localStorage.getItem('rida_tok')||'null');
+      if(j && j.e > Date.now()+5000){ drive.token=j.t; drive.exp=j.e; const d=$('sync-dot'); if(d) d.classList.add('on'); return true; }
+    }catch(x){}
+    return false;
+  },
+  // reconnexion sans intervention : possible si l'autorisation a déjà été donnée
+  async connecterSilencieux(){
+    const cid=(etat.settings.clientId||'').replace(/\s+/g,'');
+    if(!cid || location.protocol==='file:') return false;
+    try{ await drive.gis(); }catch(e){ return false; }
+    return await new Promise(ok=>{
+      let fini=false; const stop=v=>{ if(!fini){ fini=true; ok(v); } };
+      try{
+        const tc=google.accounts.oauth2.initTokenClient({
+          client_id:cid, scope:'https://www.googleapis.com/auth/drive.file',
+          callback:r=>{ if(r&&r.access_token){ drive.memoToken(r.access_token, r.expires_in); stop(true); } else stop(false); },
+          error_callback:()=>stop(false)
+        });
+        tc.requestAccessToken({prompt:''});
+      }catch(e){ stop(false); }
+      setTimeout(()=>stop(false), 8000);
+    });
+  },
+  async assurerToken(){
+    if(drive.token && Date.now() < drive.exp) return true;
+    if(drive.restaurerToken()) return true;
+    return await drive.connecterSilencieux();
+  },
   async gis(){
     if(window.google?.accounts?.oauth2) return;
     await new Promise((ok,ko)=>{ const s=document.createElement('script'); s.src='https://accounts.google.com/gsi/client'; s.onload=ok; s.onerror=ko; document.head.appendChild(s); });
@@ -1299,14 +1338,19 @@ const drive = {
     try{ await drive.gis(); }catch(e){ toast('Impossible de charger le module Google'); return; }
     const tc=google.accounts.oauth2.initTokenClient({
       client_id:cid, scope:'https://www.googleapis.com/auth/drive.file',
-      callback:async r=>{ if(r.access_token){ drive.token=r.access_token; $('sync-dot').classList.add('on'); toast('Connecté à Drive ✓'); await drive.synchroniser(true); } }
+      callback:async r=>{ if(r.access_token){ drive.memoToken(r.access_token, r.expires_in); toast('Connecté à Drive ✓'); await drive.synchroniser(true); } }
     });
     tc.requestAccessToken();
   },
   async api(url, opts={}){
-    opts.headers=Object.assign({Authorization:'Bearer '+drive.token}, opts.headers||{});
-    const r=await fetch(url,opts);
-    if(r.status===401){ drive.token=null; $('sync-dot').classList.remove('on'); throw new Error('auth'); }
+    if(!drive.token || Date.now()>=drive.exp){ if(!await drive.assurerToken()) throw new Error('auth'); }
+    const envoi=()=>fetch(url, Object.assign({}, opts, {headers:Object.assign({Authorization:'Bearer '+drive.token}, opts.headers||{})}));
+    let r=await envoi();
+    if(r.status===401){
+      drive.oublierToken();
+      if(await drive.connecterSilencieux()){ r=await envoi(); }
+      if(r.status===401){ throw new Error('auth'); }
+    }
     return r;
   },
   async trouverFichier(){
@@ -1319,7 +1363,7 @@ const drive = {
   async pousser(){
     if(!drive.token) return;
     const corps=JSON.stringify(etat);
-    drive.pousseA=etat.updatedAt;
+
     let id=await drive.trouverFichier();
     if(id){ await drive.api('https://www.googleapis.com/upload/drive/v3/files/'+id+'?uploadType=media',{method:'PATCH',headers:{'Content-Type':'application/json'},body:corps}); }
     else{
@@ -1330,17 +1374,20 @@ const drive = {
       const r=await drive.api('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',body:fd});
       const j=await r.json(); etat.settings.fileId=j.id; persister(false,false);
     }
+    drive.marquerSynchro();
   },
+  marquerSynchro(){ etat.settings.syncedAt=etat.updatedAt; persister(false,false); },
+  enAttente(){ return !drive.vide(etat) && etat.updatedAt !== (etat.settings.syncedAt||0); },
   pousserDebounce(){ clearTimeout(drive._deb); drive._deb=setTimeout(()=>{ if(!drive.vide(etat)) drive.pousser().catch(()=>{}); },2500); },
   vide(e){ return !((e.items||[]).length) && !Object.keys(e.notes||{}).length; },
   resume(e){ return (e.items||[]).length+' entrée(s), '+Object.keys(e.notes||{}).length+' carnet(s)'; },
   appliquer(distant){
     const st=Object.assign({}, etat.settings);
     etat=distant;
-    etat.settings=Object.assign({}, distant.settings||{}, {fileId:st.fileId, clientId:st.clientId, autoSync:st.autoSync});
+    etat.settings=Object.assign({}, distant.settings||{}, {fileId:st.fileId, clientId:st.clientId, autoSync:st.autoSync, syncedAt:distant.updatedAt});
     etat.lists=Object.assign({},DEFAUTS,etat.lists||{});
     etat.notes=etat.notes||{}; etat.equipes=etat.equipes||{}; etat.sthemes=etat.sthemes||{};
-    persister(false,false); drive.pousseA=etat.updatedAt; rendre();
+    persister(false,false); rendre();
   },
   async lireDistant(){
     const id=await drive.trouverFichier();
@@ -1376,23 +1423,21 @@ const drive = {
     if(e && e.message==='auth') toast('Session Drive expirée — reconnecte-toi');
     else toast('Erreur de synchronisation');
   },
-  pousseA:0, _auto:false,
-  // Vérification automatique à l'ouverture et au retour sur l'appli
+  _auto:false,
+  // Cycle automatique : récupère les nouveautés et envoie ce qui est en attente
   async verifier(){
-    if(!drive.token || drive._auto) return;
+    if(drive._auto) return;
+    if(!drive.token && !(etat.settings.clientId||'')) return;
     drive._auto=true;
     try{
+      if(!await drive.assurerToken()){ drive._auto=false; return; }
       const distant=await drive.lireDistant();
-      if(!distant){ drive._auto=false; return; }
-      if((distant.updatedAt||0) <= (etat.updatedAt||0)){ drive._auto=false; return; }
-      // le Drive est plus récent que cet appareil
-      const enAttente = !drive.vide(etat) && etat.updatedAt !== drive.pousseA;
-      if(enAttente){
-        // des modifications locales n'ont pas encore été envoyées : on ne touche à rien
-        toast('Drive plus récent — vérifie dans Réglages'); drive._auto=false; return;
-      }
-      drive.appliquer(distant);
-      toast('Données à jour depuis Drive ✓');
+      const attente=drive.enAttente();
+      if(!distant){ if(attente) await drive.pousser(); drive._auto=false; return; }
+      const plusRecent=(distant.updatedAt||0) > (etat.updatedAt||0);
+      if(plusRecent && !attente){ drive.appliquer(distant); toast('Données à jour depuis Drive ✓'); }
+      else if(plusRecent && attente){ toast('Modifications des deux côtés — voir Réglages'); }
+      else if(attente){ await drive.pousser(); }
     }catch(e){ /* silencieux */ }
     drive._auto=false;
   },
@@ -1404,7 +1449,7 @@ const drive = {
       if(!distant){ await drive.pousser(); if(!silence) toast('Envoyé sur Drive ✓'); return; }
       const locVide=drive.vide(etat), disVide=drive.vide(distant);
       // appareil vide, Drive plein : on récupère, jamais l'inverse
-      if(locVide && !disVide){ drive.appliquer(distant); drive.pousseA=etat.updatedAt; toast('Données récupérées depuis Drive ✓'); return; }
+      if(locVide && !disVide){ drive.appliquer(distant); toast('Données récupérées depuis Drive ✓'); return; }
       if(!locVide && disVide){ await drive.pousser(); if(!silence) toast('Envoyé sur Drive ✓'); return; }
       if(locVide && disVide){ if(!silence) toast('Rien à synchroniser'); return; }
       // les deux ont du contenu : le plus récent gagne, avec confirmation
@@ -1443,10 +1488,13 @@ try{
 
 rendre();
 
-// Rapatriement automatique : au retour sur l'appli et lors d'une reconnexion réseau
+// Synchronisation automatique : ouverture, retour sur l'appli, retour du réseau, et veille régulière
+drive.restaurerToken();
+setTimeout(()=>drive.verifier(), 800);
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) drive.verifier(); });
 window.addEventListener('focus', ()=>drive.verifier());
 window.addEventListener('online', ()=>drive.verifier());
+setInterval(()=>{ if(!document.hidden) drive.verifier(); }, 25000);
 </script>
 </body>
 </html>
