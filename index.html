@@ -341,7 +341,7 @@ select{font-size:13.5px}
 
 <script>
 'use strict';
-const VERSION='4.2';
+const VERSION='4.3';
 // --- diagnostic : affiche toute erreur JavaScript en bandeau rouge ---
 window.addEventListener('error', e=>{
   try{
@@ -379,7 +379,7 @@ function charger(){
     const brut = localStorage.getItem('rida');
     if(brut){ const e = JSON.parse(brut); e.lists = Object.assign({}, DEFAUTS, e.lists||{}); e.notes = e.notes||{}; e.equipes = e.equipes||{}; e.sthemes = e.sthemes||{}; return e; }
   }catch(err){}
-  return {items:[], notes:{}, equipes:{}, sthemes:{}, lists:JSON.parse(JSON.stringify(DEFAUTS)), settings:{clientId:'',autoSync:false,fileId:''}, updatedAt:Date.now()};
+  const t=Date.now(); return {items:[], notes:{}, equipes:{}, sthemes:{}, lists:JSON.parse(JSON.stringify(DEFAUTS)), settings:{clientId:'',autoSync:false,fileId:'',syncedAt:t,lastStamp:''}, updatedAt:t, stamp:''};
 }
 function persister(sync=true, touche=true){
   if(touche) etat.updatedAt = Date.now();
@@ -1129,6 +1129,7 @@ function htmlReglages(){
     ${isFile?`<div class="note">Le fichier est ouvert en local (file://). Google exige que l'application soit hébergée en https pour autoriser la connexion. En attendant, utilise l'export / import ci-dessous — je t'explique l'hébergement quand tu veux.</div>`:''}
     <label>Identifiant client Google (Client ID)</label>
     <input id="r-cid" value="${echap(s.clientId)}" placeholder="xxxxx.apps.googleusercontent.com">
+    <div class="note" style="background:#EEF1F5;color:var(--ink);font-size:12.5px">${etatSynchro()}</div>
     <div id="r-diag" class="note" style="background:#EEF1F5;color:var(--ink);font-family:'IBM Plex Mono';font-size:11px;word-break:break-all">${diagCid()}</div>
     <button class="btn" id="r-connect" ${isFile?'disabled':''} onclick="drive.connecter()">${drive.token?'Reconnecter':'Se connecter à Drive'}</button>
     <button class="btn sec" ${isFile?'disabled':''} onclick="drive.synchroniser()">Synchroniser maintenant</button>
@@ -1171,6 +1172,12 @@ function htmlReglages(){
     <h3>Zone sensible</h3>
     <button class="btn danger" onclick="toutEffacer()">Effacer toutes les données de cet appareil</button>
   </div>`;
+}
+function etatSynchro(){
+  const co = drive.token? '🟢 connecté au Drive' : '⚪ non connecté';
+  const att = drive.enAttente()? '· ⏳ modifications locales à envoyer' : '· ✅ à jour';
+  const q = (etat.items||[]).length+' entrée(s), '+Object.keys(etat.notes||{}).length+' carnet(s)';
+  return co+' '+att+'\n'+q;
 }
 function diagCid(){
   const c=(etat.settings.clientId||'').replace(/\s+/g,'');
@@ -1362,6 +1369,7 @@ const drive = {
   },
   async pousser(){
     if(!drive.token) return;
+    etat.stamp = uid()+'-'+Date.now().toString(36);
     const corps=JSON.stringify(etat);
 
     let id=await drive.trouverFichier();
@@ -1376,15 +1384,25 @@ const drive = {
     }
     drive.marquerSynchro();
   },
-  marquerSynchro(){ etat.settings.syncedAt=etat.updatedAt; persister(false,false); },
-  enAttente(){ return !drive.vide(etat) && etat.updatedAt !== (etat.settings.syncedAt||0); },
+  marquerSynchro(){
+    etat.settings.syncedAt=etat.updatedAt;
+    etat.settings.lastStamp=etat.stamp||'';
+    persister(false,false);
+  },
+  // modifications locales non encore envoyées (comparaison interne à l'appareil : sans effet d'horloge)
+  enAttente(){
+    if(drive.vide(etat) && !etat.settings.lastStamp) return false; // appareil neuf
+    return etat.updatedAt !== (etat.settings.syncedAt===undefined? -1 : etat.settings.syncedAt);
+  },
+  // le Drive a-t-il changé depuis notre dernière synchronisation ? (empreinte, pas date)
+  distantNouveau(distant){ return (distant.stamp||'') !== (etat.settings.lastStamp||''); },
   pousserDebounce(){ clearTimeout(drive._deb); drive._deb=setTimeout(()=>{ if(!drive.vide(etat)) drive.pousser().catch(()=>{}); },2500); },
   vide(e){ return !((e.items||[]).length) && !Object.keys(e.notes||{}).length; },
   resume(e){ return (e.items||[]).length+' entrée(s), '+Object.keys(e.notes||{}).length+' carnet(s)'; },
   appliquer(distant){
     const st=Object.assign({}, etat.settings);
     etat=distant;
-    etat.settings=Object.assign({}, distant.settings||{}, {fileId:st.fileId, clientId:st.clientId, autoSync:st.autoSync, syncedAt:distant.updatedAt});
+    etat.settings=Object.assign({}, distant.settings||{}, {fileId:st.fileId, clientId:st.clientId, autoSync:st.autoSync, syncedAt:distant.updatedAt, lastStamp:(distant.stamp||'')});
     etat.lists=Object.assign({},DEFAUTS,etat.lists||{});
     etat.notes=etat.notes||{}; etat.equipes=etat.equipes||{}; etat.sthemes=etat.sthemes||{};
     persister(false,false); rendre();
@@ -1424,7 +1442,7 @@ const drive = {
     else toast('Erreur de synchronisation');
   },
   _auto:false,
-  // Cycle automatique : récupère les nouveautés et envoie ce qui est en attente
+  // Cycle automatique : compare les empreintes, jamais les horloges
   async verifier(){
     if(drive._auto) return;
     if(!drive.token && !(etat.settings.clientId||'')) return;
@@ -1432,34 +1450,32 @@ const drive = {
     try{
       if(!await drive.assurerToken()){ drive._auto=false; return; }
       const distant=await drive.lireDistant();
-      const attente=drive.enAttente();
-      if(!distant){ if(attente) await drive.pousser(); drive._auto=false; return; }
-      const plusRecent=(distant.updatedAt||0) > (etat.updatedAt||0);
-      if(plusRecent && !attente){ drive.appliquer(distant); toast('Données à jour depuis Drive ✓'); }
-      else if(plusRecent && attente){ toast('Modifications des deux côtés — voir Réglages'); }
-      else if(attente){ await drive.pousser(); }
+      const local=drive.enAttente();
+      if(!distant){ if(local) await drive.pousser(); drive._auto=false; return; }
+      const dist=drive.distantNouveau(distant);
+      if(dist && !local){ drive.appliquer(distant); toast('Données à jour depuis Drive ✓'); }
+      else if(!dist && local){ await drive.pousser(); }
+      else if(dist && local){ toast('⚠ Modifications des deux côtés — voir Réglages'); }
     }catch(e){ /* silencieux */ }
     drive._auto=false;
   },
-  // Synchronisation raisonnée, sans écrasement aveugle
+  // Synchronisation manuelle
   async synchroniser(silence){
     if(!drive.token){ await drive.connecter(); return; }
     try{
       const distant=await drive.lireDistant();
+      const local=drive.enAttente();
       if(!distant){ await drive.pousser(); if(!silence) toast('Envoyé sur Drive ✓'); return; }
-      const locVide=drive.vide(etat), disVide=drive.vide(distant);
-      // appareil vide, Drive plein : on récupère, jamais l'inverse
-      if(locVide && !disVide){ drive.appliquer(distant); toast('Données récupérées depuis Drive ✓'); return; }
-      if(!locVide && disVide){ await drive.pousser(); if(!silence) toast('Envoyé sur Drive ✓'); return; }
-      if(locVide && disVide){ if(!silence) toast('Rien à synchroniser'); return; }
-      // les deux ont du contenu : le plus récent gagne, avec confirmation
-      if((distant.updatedAt||0) > (etat.updatedAt||0)){
-        if(confirm('La version Drive est plus récente ('+drive.resume(distant)+').\nLa charger sur cet appareil ? (contenu actuel : '+drive.resume(etat)+')')){
-          drive.appliquer(distant); toast('Données récupérées depuis Drive ✓'); return;
-        }
-        if(!confirm('Envoyer plutôt cet appareil vers le Drive et écraser la version distante ?')) return;
+      const dist=drive.distantNouveau(distant);
+      if(dist && !local){ drive.appliquer(distant); toast('Données récupérées depuis Drive ✓'); return; }
+      if(!dist && local){ await drive.pousser(); if(!silence) toast('Envoyé sur Drive ✓'); return; }
+      if(!dist && !local){ if(!silence) toast('Déjà synchronisé ✓'); return; }
+      // conflit : les deux côtés ont changé
+      if(confirm('Modifications des deux côtés.\n\nDrive : '+drive.resume(distant)+'\nCet appareil : '+drive.resume(etat)+'\n\nCharger la version du Drive ? (Annuler = envoyer cet appareil)')){
+        drive.appliquer(distant); toast('Version Drive chargée ✓');
+      }else{
+        await drive.pousser(); toast('Cet appareil a été envoyé ✓');
       }
-      await drive.pousser(); if(!silence) toast('Enregistré sur Drive ✓');
     }catch(e){ drive.err(e); }
   }
 
@@ -1494,7 +1510,7 @@ setTimeout(()=>drive.verifier(), 800);
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) drive.verifier(); });
 window.addEventListener('focus', ()=>drive.verifier());
 window.addEventListener('online', ()=>drive.verifier());
-setInterval(()=>{ if(!document.hidden) drive.verifier(); }, 25000);
+setInterval(()=>{ if(!document.hidden) drive.verifier(); }, 15000);
 </script>
 </body>
 </html>
