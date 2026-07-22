@@ -341,7 +341,7 @@ select{font-size:13.5px}
 
 <script>
 'use strict';
-const VERSION='3.9.4';
+const VERSION='4.0';
 // --- diagnostic : affiche toute erreur JavaScript en bandeau rouge ---
 window.addEventListener('error', e=>{
   try{
@@ -381,8 +381,8 @@ function charger(){
   }catch(err){}
   return {items:[], notes:{}, equipes:{}, sthemes:{}, lists:JSON.parse(JSON.stringify(DEFAUTS)), settings:{clientId:'',autoSync:false,fileId:''}, updatedAt:Date.now()};
 }
-function persister(sync=true){
-  etat.updatedAt = Date.now();
+function persister(sync=true, touche=true){
+  if(touche) etat.updatedAt = Date.now();
   try{ localStorage.setItem('rida', JSON.stringify(etat)); }
   catch(err){ toast("Stockage local indisponible — pense à exporter"); }
   majCompteur();
@@ -1132,8 +1132,10 @@ function htmlReglages(){
     <div id="r-diag" class="note" style="background:#EEF1F5;color:var(--ink);font-family:'IBM Plex Mono';font-size:11px;word-break:break-all">${diagCid()}</div>
     <button class="btn" id="r-connect" ${isFile?'disabled':''} onclick="drive.connecter()">${drive.token?'Reconnecter':'Se connecter à Drive'}</button>
     <button class="btn sec" ${isFile?'disabled':''} onclick="drive.synchroniser()">Synchroniser maintenant</button>
+    <button class="btn sec" ${isFile?'disabled':''} onclick="drive.recuperer()">⬇ Récupérer les données du Drive</button>
+    <button class="btn sec" ${isFile?'disabled':''} onclick="drive.envoyer()">⬆ Envoyer cet appareil vers le Drive</button>
     <div class="toggle">Synchronisation automatique
-      <input type="checkbox" style="width:auto" ${s.autoSync?'checked':''} onchange="etat.settings.autoSync=this.checked;persister(false)"></div>
+      <input type="checkbox" style="width:auto" ${s.autoSync?'checked':''} onchange="etat.settings.autoSync=this.checked;persister(false,false)"></div>
   </div>
   <div class="reg-sec">
     <h3>Export / Import</h3>
@@ -1179,7 +1181,7 @@ function diagCid(){
 }
 function initReglages(){
   const cid=$('r-cid');
-  if(cid) cid.oninput=()=>{ etat.settings.clientId=cid.value.replace(/\s+/g,''); persister(false); const dg=$('r-diag'); if(dg) dg.textContent=diagCid(); };
+  if(cid) cid.oninput=()=>{ etat.settings.clientId=cid.value.replace(/\s+/g,''); persister(false,false); const dg=$('r-diag'); if(dg) dg.textContent=diagCid(); };
 }
 function choisirEquipe(tEnc){
   const t=decodeURIComponent(tEnc);
@@ -1297,7 +1299,7 @@ const drive = {
     try{ await drive.gis(); }catch(e){ toast('Impossible de charger le module Google'); return; }
     const tc=google.accounts.oauth2.initTokenClient({
       client_id:cid, scope:'https://www.googleapis.com/auth/drive.file',
-      callback:async r=>{ if(r.access_token){ drive.token=r.access_token; $('sync-dot').classList.add('on'); toast('Connecté à Drive ✓'); await drive.synchroniser(); } }
+      callback:async r=>{ if(r.access_token){ drive.token=r.access_token; $('sync-dot').classList.add('on'); toast('Connecté à Drive ✓'); await drive.synchroniser(true); } }
     });
     tc.requestAccessToken();
   },
@@ -1311,7 +1313,7 @@ const drive = {
     if(etat.settings.fileId) return etat.settings.fileId;
     const r=await drive.api("https://www.googleapis.com/drive/v3/files?q=name%3D'rida-data.json'%20and%20trashed%3Dfalse&fields=files(id)");
     const j=await r.json();
-    if(j.files&&j.files.length){ etat.settings.fileId=j.files[0].id; persister(false); return j.files[0].id; }
+    if(j.files&&j.files.length){ etat.settings.fileId=j.files[0].id; persister(false,false); return j.files[0].id; }
     return null;
   },
   async pousser(){
@@ -1325,32 +1327,76 @@ const drive = {
       fd.append('metadata', new Blob([JSON.stringify(meta)],{type:'application/json'}));
       fd.append('file', new Blob([corps],{type:'application/json'}));
       const r=await drive.api('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',body:fd});
-      const j=await r.json(); etat.settings.fileId=j.id; persister(false);
+      const j=await r.json(); etat.settings.fileId=j.id; persister(false,false);
     }
   },
-  pousserDebounce(){ clearTimeout(drive._deb); drive._deb=setTimeout(()=>drive.pousser().catch(()=>{}),2500); },
-  async synchroniser(){
+  pousserDebounce(){ clearTimeout(drive._deb); drive._deb=setTimeout(()=>{ if(!drive.vide(etat)) drive.pousser().catch(()=>{}); },2500); },
+  vide(e){ return !((e.items||[]).length) && !Object.keys(e.notes||{}).length; },
+  resume(e){ return (e.items||[]).length+' entrée(s), '+Object.keys(e.notes||{}).length+' carnet(s)'; },
+  appliquer(distant){
+    const st=Object.assign({}, etat.settings);
+    etat=distant;
+    etat.settings=Object.assign({}, distant.settings||{}, {fileId:st.fileId, clientId:st.clientId, autoSync:st.autoSync});
+    etat.lists=Object.assign({},DEFAUTS,etat.lists||{});
+    etat.notes=etat.notes||{}; etat.equipes=etat.equipes||{}; etat.sthemes=etat.sthemes||{};
+    persister(false,false); rendre();
+  },
+  async lireDistant(){
+    const id=await drive.trouverFichier();
+    if(!id) return null;
+    const r=await drive.api('https://www.googleapis.com/drive/v3/files/'+id+'?alt=media');
+    const j=await r.json();
+    return (j && Array.isArray(j.items))? j : null;
+  },
+  // Récupérer explicitement : Drive → cet appareil
+  async recuperer(){
     if(!drive.token){ await drive.connecter(); return; }
     try{
-      const id=await drive.trouverFichier();
-      if(id){
-        const r=await drive.api('https://www.googleapis.com/drive/v3/files/'+id+'?alt=media');
-        const distant=await r.json();
-        if(distant.updatedAt>etat.updatedAt){
-          if(confirm('La version Drive est plus récente ('+distant.items.length+' entrées). La charger sur cet appareil ?')){
-            const fid=etat.settings.fileId, cid=etat.settings.clientId, as=etat.settings.autoSync;
-            etat=distant; etat.settings=Object.assign(etat.settings||{}, {fileId:fid, clientId:cid, autoSync:as});
-            etat.lists=Object.assign({},DEFAUTS,etat.lists||{}); etat.notes=etat.notes||{}; etat.equipes=etat.equipes||{}; etat.sthemes=etat.sthemes||{};
-            persister(false); rendre(); toast('Données chargées depuis Drive ✓'); return;
-          }
-        }
+      const distant=await drive.lireDistant();
+      if(!distant){ toast('Aucune donnée sur le Drive'); return; }
+      if(!confirm('Charger les données du Drive ('+drive.resume(distant)+') ?\nLe contenu de cet appareil ('+drive.resume(etat)+') sera remplacé.')) return;
+      drive.appliquer(distant);
+      toast('Données récupérées depuis Drive ✓');
+    }catch(e){ drive.err(e); }
+  },
+  // Envoyer explicitement : cet appareil → Drive
+  async envoyer(){
+    if(!drive.token){ await drive.connecter(); return; }
+    try{
+      const distant=await drive.lireDistant();
+      if(distant && !drive.vide(distant) && drive.vide(etat)){
+        if(!confirm('ATTENTION : cet appareil est vide et le Drive contient '+drive.resume(distant)+'.\nEnvoyer effacerait ces données. Continuer quand même ?')) return;
       }
-      await drive.pousser(); toast('Enregistré sur Drive ✓');
-    }catch(e){
-      if(e.message==='auth') toast('Session Drive expirée — reconnecte-toi');
-      else toast('Erreur de synchronisation');
-    }
+      await drive.pousser();
+      toast('Envoyé sur Drive ✓');
+    }catch(e){ drive.err(e); }
+  },
+  err(e){
+    if(e && e.message==='auth') toast('Session Drive expirée — reconnecte-toi');
+    else toast('Erreur de synchronisation');
+  },
+  // Synchronisation raisonnée, sans écrasement aveugle
+  async synchroniser(silence){
+    if(!drive.token){ await drive.connecter(); return; }
+    try{
+      const distant=await drive.lireDistant();
+      if(!distant){ await drive.pousser(); if(!silence) toast('Envoyé sur Drive ✓'); return; }
+      const locVide=drive.vide(etat), disVide=drive.vide(distant);
+      // appareil vide, Drive plein : on récupère, jamais l'inverse
+      if(locVide && !disVide){ drive.appliquer(distant); toast('Données récupérées depuis Drive ✓'); return; }
+      if(!locVide && disVide){ await drive.pousser(); if(!silence) toast('Envoyé sur Drive ✓'); return; }
+      if(locVide && disVide){ if(!silence) toast('Rien à synchroniser'); return; }
+      // les deux ont du contenu : le plus récent gagne, avec confirmation
+      if((distant.updatedAt||0) > (etat.updatedAt||0)){
+        if(confirm('La version Drive est plus récente ('+drive.resume(distant)+').\nLa charger sur cet appareil ? (contenu actuel : '+drive.resume(etat)+')')){
+          drive.appliquer(distant); toast('Données récupérées depuis Drive ✓'); return;
+        }
+        if(!confirm('Envoyer plutôt cet appareil vers le Drive et écraser la version distante ?')) return;
+      }
+      await drive.pousser(); if(!silence) toast('Enregistré sur Drive ✓');
+    }catch(e){ drive.err(e); }
   }
+
 };
 
 /* ============================================================
