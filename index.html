@@ -34,6 +34,11 @@ header{background:var(--ink);color:#fff;padding:14px 16px 12px;position:sticky;t
 .compteur .val{font-family:'IBM Plex Mono';font-weight:600;font-size:24px;line-height:1;color:#FFD44D}
 .compteur .lbl{font-size:10.5px;color:#9FB0C0;text-transform:uppercase;letter-spacing:.07em;margin-top:3px}
 .h-voir{background:#FFD44D;color:#16222E;font-size:10px;font-weight:700;border-radius:99px;padding:2px 8px;margin-left:4px;text-transform:uppercase;letter-spacing:.05em;vertical-align:1px}
+.compteur .jj{display:flex;gap:5px;justify-content:flex-end;margin-top:4px}
+.pj{font-size:9.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;border-radius:99px;padding:2px 8px;color:#DCE5F5}
+.pj b{font-family:'IBM Plex Mono';font-weight:600;font-size:10.5px;color:#fff}
+.pj1{background:#20345C}
+.pj2{background:#3A5A96}
 .sync-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#5C6C7B;margin-right:5px;vertical-align:1px}
 .sync-dot.on{background:#3ED598}
 .pomo{display:flex;flex-direction:column;align-items:center;gap:2px;background:#243444;border:1px solid #35485C;border-radius:12px;padding:6px 11px 5px;color:#fff}
@@ -146,35 +151,37 @@ select{font-size:13.5px}
 .carte.f-rouge,.ligne-mini.f-rouge{background:#FBE0D6;border-color:#EBAB94}
 .carte.f-jaune,.ligne-mini.f-jaune{background:#FBF0D2;border-color:#E8CD84}
 .carte.f-noir,.ligne-mini.f-noir{background:var(--ink);border-color:var(--ink)}
+.carte.f-j1,.ligne-mini.f-j1{background:#20345C;border-color:#20345C}
+.carte.f-j2,.ligne-mini.f-j2{background:#3A5A96;border-color:#3A5A96}
 .ligne-mini{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:11px;box-shadow:var(--shadow);padding:8px 12px;margin-bottom:7px;cursor:pointer}
 .ligne-mini .lm-txt{flex:1;font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ligne-mini .lm-date{font-family:'IBM Plex Mono';font-size:11.5px;color:var(--muted);flex:0 0 auto}
 .ligne-mini .lm-tps{font-family:'IBM Plex Mono';font-size:11.5px;font-weight:600;color:var(--accent);flex:0 0 auto}
-.ligne-mini.f-noir .lm-tps{color:#8FC7F5}
+.ligne-mini.f-sombre .lm-tps{color:#8FC7F5}
 .ress-row{display:flex;align-items:center;gap:5px;margin:5px 0}
 .ress-row .rnom{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
 .ress-row input{flex:1;min-width:0}
 .ress-x{width:30px;height:28px;flex:0 0 auto;border-radius:7px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:15px;line-height:1}
-.ligne-mini.f-noir .lm-txt{color:#fff}
-.ligne-mini.f-noir .lm-date{color:#9FB0C0}
-.ligne-mini.f-noir .ico{background:#2D3F51;color:#DCE5EE}
-.ligne-mini.f-noir .ico.ok{background:#1E5A3C;color:#8FE3B4}
-.ligne-mini.f-noir .ico.jr-on{background:#FFD44D;color:#16222E}
+.ligne-mini.f-sombre .lm-txt{color:#fff}
+.ligne-mini.f-sombre .lm-date{color:#9FB0C0}
+.ligne-mini.f-sombre .ico{background:#2D3F51;color:#DCE5EE}
+.ligne-mini.f-sombre .ico.ok{background:#1E5A3C;color:#8FE3B4}
+.ligne-mini.f-sombre .ico.jr-on{background:#FFD44D;color:#16222E}
 .ligne-mini .lm-date.retard{color:var(--warn);font-weight:600}
 .moi-tete{font-size:13px;color:var(--muted);margin-bottom:10px}
-.carte.f-noir .l1{color:#9FB0C0}
-.carte.f-noir .l1 .ent{color:#7A8CA0}
-.carte.f-noir .l2{color:#fff}
-.carte.f-noir .chip,.carte.f-noir .rchip,.carte.f-noir .notebtn,.carte.f-noir .ico{background:#2D3F51;color:#DCE5EE}
-.carte.f-noir .ico.ok{background:#1E5A3C;color:#8FE3B4}
-.carte.f-noir .ico.jr-on{background:#FFD44D;color:#16222E}
+.carte.f-sombre .l1{color:#9FB0C0}
+.carte.f-sombre .l1 .ent{color:#7A8CA0}
+.carte.f-sombre .l2{color:#fff}
+.carte.f-sombre .chip,.carte.f-sombre .rchip,.carte.f-sombre .notebtn,.carte.f-sombre .ico{background:#2D3F51;color:#DCE5EE}
+.carte.f-sombre .ico.ok{background:#1E5A3C;color:#8FE3B4}
+.carte.f-sombre .ico.jr-on{background:#FFD44D;color:#16222E}
 .carte.f-noir a.rchip.lienc{color:#9DB8FF}
-.carte.f-noir .avct-mini .barre{background:#33475A}
-.carte.f-noir .com{background:#22313F;color:#D6DEE6}
-.carte.f-noir .com .d{color:#8FA1B3}
-.carte.f-noir .rchip.lR b{color:#9DB8FF}
-.carte.f-noir .rchip.lA b{color:#F4C874}
-.carte.f-noir .rchip.lC b{color:#8FE3B4}
+.carte.f-sombre .avct-mini .barre{background:#33475A}
+.carte.f-sombre .com{background:#22313F;color:#D6DEE6}
+.carte.f-sombre .com .d{color:#8FA1B3}
+.carte.f-sombre .rchip.lR b{color:#9DB8FF}
+.carte.f-sombre .rchip.lA b{color:#F4C874}
+.carte.f-sombre .rchip.lC b{color:#8FE3B4}
 .l2{font-weight:600;font-size:15px;cursor:pointer;margin-top:7px}
 .l2 .chip{font-weight:500}
 .c-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
@@ -283,6 +290,7 @@ select{font-size:13.5px}
       <div class="compteur">
         <div class="val" id="h-temps">0:00</div>
         <div class="lbl"><span class="sync-dot" id="sync-dot"></span><span id="h-lbl">programmé aujourd'hui</span> <button class="h-voir" onclick="allerJour()" title="Afficher les actions du jour">voir ›</button></div>
+        <div class="jj"><span class="pj pj1">dem. <b id="h-j1">0:00</b></span><span class="pj pj2">ap.-dem. <b id="h-j2">0:00</b></span></div>
       </div>
     </div>
   </div>
@@ -379,7 +387,7 @@ select{font-size:13.5px}
 
 <script>
 'use strict';
-const VERSION='4.5';
+const VERSION='4.7';
 // --- diagnostic : affiche toute erreur JavaScript en bandeau rouge ---
 window.addEventListener('error', e=>{
   try{
@@ -449,11 +457,16 @@ function fermer(id){ $(id).classList.remove('on'); if(id==='v-voc') voc.stop(); 
 function ouvrir(id){ $(id).classList.add('on'); }
 
 /* ---------- compteur en-tête ---------- */
+function isoPlus(n){ const d=new Date(); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
 function majCompteur(){
   const jour = auj();
   const duJour = etat.items.filter(i=>!i.done && i.datePrev===jour);
   const total = duJour.reduce((s,i)=>s+(i.temps||0),0);
   const nbActions = duJour.filter(i=>i.type==='ACTION').length;
+  const tJ1 = etat.items.filter(i=>!i.done && i.datePrev===isoPlus(1)).reduce((s,i)=>s+(i.temps||0),0);
+  const tJ2 = etat.items.filter(i=>!i.done && i.datePrev===isoPlus(2)).reduce((s,i)=>s+(i.temps||0),0);
+  $('h-j1').textContent = fmtCompteur(tJ1);
+  $('h-j2').textContent = fmtCompteur(tJ2);
   $('h-temps').textContent = fmtCompteur(total);
   $('h-lbl').textContent = nbActions + (nbActions>1?' actions':' action') + ' à faire aujourd\'hui';
   $('h-date').textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}) + ' · v'+VERSION;
@@ -565,7 +578,7 @@ function ddFiltre(cle){
     const lies=(filtres.theme && filtres.theme!=='(sans)')? (etat.sthemes[filtres.theme]||[]) : [];
     const source=lies.length? lies : l.sousThemes;
     titre='Sous-thème'; opts=[{v:'',l:'Tous'}].concat(source.map(v=>({v,l:v}))); act=filtres.stheme; }
-  else if(cle==='ress'){ titre='Personne ressource'; opts=[{v:'',l:'Toutes'},{v:'(sans)',l:'— Sans ressource'}].concat(l.ressources.map(v=>({v,l:v}))); act=filtres.ress; }
+  else if(cle==='ress'){ titre='Personne ressource'; opts=[{v:'',l:'Toutes'},{v:'(sans)',l:'— Sans ressource'}].concat(toutesPersonnes().map(v=>({v,l:v}))); act=filtres.ress; }
   else{ titre='Trier par'; opts=[{v:'prio',l:'Priorité'},{v:'date',l:'Date prévue'},{v:'recent',l:"Date d'entrée"},{v:'ress',l:'Personne ressource'}]; act=filtres.tri; }
   ddOuvrir(titre, opts, act, v=>{ filtres[cle]=v; rendre(); });
 }
@@ -576,7 +589,8 @@ function carte(i){
   const retard = !i.done && i.datePrev && i.datePrev < jour;
   const cejour = i.datePrev === jour;
   const proche = !i.done && i.datePrev && i.datePrev > jour && i.datePrev <= j8;
-  const teinte = i.done? '' : cejour? 'f-noir' : retard? 'f-rouge' : proche? 'f-jaune' : '';
+  const j1 = i.datePrev===isoPlus(1), j2 = i.datePrev===isoPlus(2);
+  const teinte = i.done? '' : cejour? 'f-sombre f-noir' : retard? 'f-rouge' : j1? 'f-sombre f-j1' : j2? 'f-sombre f-j2' : proche? 'f-jaune' : '';
   const dernierCom = (i.comments||[]).slice(-1)[0];
   const btnJ = (!i.done && i.type==='ACTION')? `<button class="ico ${cejour?'jr-on':'jr'}" onclick="faireCeJour('${i.id}')" title="À faire ce jour (impacte le chrono)">J</button>` : '';
   return `<div class="carte ${teinte}">
@@ -713,7 +727,7 @@ function optsRess(){
   const th=$('e-theme').value;
   const equipe=(etat.equipes[th]||[]);
   const deja=new Set(editRess.map(r=>r.nom));
-  const reste=[...new Set([...equipe, ...etat.lists.ressources])].filter(n=>!deja.has(n));
+  const reste=[...new Set([...equipe, ...toutesPersonnes()])].filter(n=>!deja.has(n));
   return reste.map(v=>({v,l:v})).concat([{v:'::libre', l:'✎ Autre nom…'}]);
 }
 function choisirRess(k){
@@ -1140,6 +1154,11 @@ function supprimerNote(id){
 /* ============================================================
    VUE « MOI » — mes actions en une ligne
    ============================================================ */
+function toutesPersonnes(){
+  const st=new Set(etat.lists.ressources);
+  etat.items.forEach(i=>{ Object.keys(i.raci||{}).forEach(p=>st.add(p)); if(i.ressource) st.add(i.ressource); });
+  return [...st].filter(Boolean).sort((a,b)=>a.localeCompare(b,'fr'));
+}
 function moiPersonne(){
   return etat.lists.ressources.find(r=>norm(r)==='eric') || etat.lists.ressources.find(r=>norm(r).startsWith('eric')) || '';
 }
@@ -1163,7 +1182,8 @@ function htmlMoi(){
     const retard=i.datePrev && i.datePrev<jour;
     const cejour=i.datePrev===jour;
     const proche=i.datePrev && i.datePrev>jour && i.datePrev<=j8;
-    const teinte=cejour?'f-noir':retard?'f-rouge':proche?'f-jaune':'';
+    const j1=i.datePrev===isoPlus(1), j2=i.datePrev===isoPlus(2);
+    const teinte=cejour?'f-sombre f-noir':retard?'f-rouge':j1?'f-sombre f-j1':j2?'f-sombre f-j2':proche?'f-jaune':'';
     return `<div class="ligne-mini ${teinte}" onclick="editerItem('${i.id}')">
       <span class="lm-txt">${echap(i.texte)}</span>
       ${i.temps?`<span class="lm-tps">⏱ ${fmtCompteur(i.temps)}</span>`:''}
