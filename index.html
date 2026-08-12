@@ -149,6 +149,12 @@ select{font-size:13.5px}
 .ligne-mini{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:11px;box-shadow:var(--shadow);padding:8px 12px;margin-bottom:7px;cursor:pointer}
 .ligne-mini .lm-txt{flex:1;font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ligne-mini .lm-date{font-family:'IBM Plex Mono';font-size:11.5px;color:var(--muted);flex:0 0 auto}
+.ligne-mini .lm-tps{font-family:'IBM Plex Mono';font-size:11.5px;font-weight:600;color:var(--accent);flex:0 0 auto}
+.ligne-mini.f-noir .lm-tps{color:#8FC7F5}
+.ress-row{display:flex;align-items:center;gap:5px;margin:5px 0}
+.ress-row .rnom{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
+.ress-row input{flex:1;min-width:0}
+.ress-x{width:30px;height:28px;flex:0 0 auto;border-radius:7px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:15px;line-height:1}
 .ligne-mini.f-noir .lm-txt{color:#fff}
 .ligne-mini.f-noir .lm-date{color:#9FB0C0}
 .ligne-mini.f-noir .ico{background:#2D3F51;color:#DCE5EE}
@@ -321,8 +327,7 @@ select{font-size:13.5px}
       <div><label>Priorisation</label><input type="hidden" id="e-prio" value="2"><button class="pickb" id="b-e-prio" onclick="pickChamp('e-prio')">2 — Moyenne</button></div>
       <div><label>Thème</label><input type="hidden" id="e-theme"><button class="pickb ph" id="b-e-theme" onclick="pickChamp('e-theme')">—</button></div>
       <div><label>Sous-thème</label><input type="hidden" id="e-stheme"><button class="pickb ph" id="b-e-stheme" onclick="pickChamp('e-stheme')">—</button></div>
-      <div><label>Ressource</label><input type="hidden" id="e-ress"><button class="pickb ph" id="b-e-ress" onclick="pickChamp('e-ress')">—</button></div>
-      <div class="full" id="e-raci-bloc" style="display:none"><label>RACI — équipe du thème</label><div class="raci-bloc" id="e-raci"></div></div>
+      <div class="full"><label>Ressources — R responsable · A approbateur · C conseillé · I informé</label><div id="e-ress-liste"></div></div>
       <div><label>Temps estimé</label>
         <div style="display:flex;gap:6px">
           <input type="hidden" id="e-th" value="0"><button class="pickb" id="b-e-th" style="flex:1" onclick="pickChamp('e-th')">0 h</button>
@@ -671,7 +676,6 @@ function champOpts(id){
     const liste=[...source]; if(cur && !liste.includes(cur)) liste.push(cur);
     return [{v:'',l:'—'}].concat(liste.map(v=>({v,l:v})));
   }
-  if(id==='e-ress') return [{v:'',l:'—'}].concat(l.ressources.map(v=>({v,l:v})));
   if(id==='e-th') return Array.from({length:9},(_,h)=>({v:String(h),l:h+' h'}));
   if(id==='e-tm') return Array.from({length:12},(_,k)=>({v:String(k*5),l:String(k*5).padStart(2,'0')+' min'}));
   if(id==='e-dsel') return ddDates;
@@ -687,34 +691,60 @@ function setChamp(id, v){
   b.textContent=libChamp(id,v);
   b.classList.toggle('ph', v==='' );
 }
-let editRaci={};
-function majRaci(){
+let editRess=[];      // [{nom, lettre}]
+let ressLibreIdx=null; // index de la ligne en saisie libre (-1 = nouvelle ligne)
+function majRessListe(){
+  const z=$('e-ress-liste'); if(!z) return;
+  const lettres={R:'Responsable',A:'Approbateur',C:'Conseillé',I:'Informé'};
+  const ligne=(r,k)=>{
+    if(ressLibreIdx===k) return `<div class="ress-row"><input id="e-ress-inp" placeholder="Nom…" value="${r?echap(r.nom):''}" onkeydown="if(event.key==='Enter'){event.preventDefault();validerRessLibre()}" onblur="validerRessLibre()"></div>`;
+    return `<div class="ress-row">
+      <button class="pickb rnom" onclick="choisirRess(${k})">${echap(r.nom)}</button>`+
+      ['R','A','C','I'].map(l=>`<button class="raci-l l${l} ${r.lettre===l?'on':''}" onclick="setRessLettre(${k},'${l}')" title="${lettres[l]}">${l}</button>`).join('')+
+      `<button class="ress-x" onclick="retirerRess(${k})" title="Retirer">×</button>
+    </div>`;
+  };
+  let html=editRess.map((r,k)=>ligne(r,k)).join('');
+  html += ressLibreIdx===-1 ? ligne(null,-1) : `<div class="ress-row"><button class="pickb ph rnom" onclick="choisirRess(-1)">+ Ajouter une personne…</button></div>`;
+  z.innerHTML=html;
+  if(ressLibreIdx!==null){ const i=$('e-ress-inp'); if(i) setTimeout(()=>i.focus(),40); }
+}
+function optsRess(){
   const th=$('e-theme').value;
   const equipe=(etat.equipes[th]||[]);
-  const pers=[...new Set([...equipe, ...Object.keys(editRaci)])];
-  const bloc=$('e-raci-bloc');
-  if(!pers.length){ bloc.style.display='none'; $('e-raci').innerHTML=''; return; }
-  bloc.style.display='block';
-  $('e-raci').innerHTML = pers.map(p=>{
-    const cur=editRaci[p]||'';
-    return `<div class="raci-row"><span class="rn">${echap(p)}</span>`+
-      ['R','A','C','I'].map(l=>`<button class="raci-l l${l} ${cur===l?'on':''}" onclick="toggleRaci('${encodeURIComponent(p)}','${l}')" title="${ {R:'Responsable',A:'Approbateur',C:'Conseiller',I:'Informé'}[l] }">${l}</button>`).join('')+
-      `</div>`;
-  }).join('');
+  const deja=new Set(editRess.map(r=>r.nom));
+  const reste=[...new Set([...equipe, ...etat.lists.ressources])].filter(n=>!deja.has(n));
+  return reste.map(v=>({v,l:v})).concat([{v:'::libre', l:'✎ Autre nom…'}]);
 }
-function toggleRaci(pEnc,l){
-  const p=decodeURIComponent(pEnc);
-  if(editRaci[p]===l) delete editRaci[p]; else editRaci[p]=l;
-  majRaci();
+function choisirRess(k){
+  ddOuvrir('Personne ressource', optsRess(), k>=0?editRess[k].nom:'', v=>{
+    if(v==='::libre'){ ressLibreIdx=k; majRessListe(); return; }
+    if(k>=0) editRess[k].nom=v; else editRess.push({nom:v, lettre:'R'});
+    majRessListe();
+  });
+}
+function validerRessLibre(){
+  if(ressLibreIdx===null) return;
+  const i=$('e-ress-inp'); if(!i) return;
+  const n=i.value.trim(); const k=ressLibreIdx; ressLibreIdx=null;
+  if(n){ if(k>=0) editRess[k].nom=n; else editRess.push({nom:n, lettre:'R'}); }
+  majRessListe();
+}
+function setRessLettre(k,l){ editRess[k].lettre=l; majRessListe(); }
+function retirerRess(k){ editRess.splice(k,1); if(ressLibreIdx!==null) ressLibreIdx=null; majRessListe(); }
+function initRess(ressource, raci){
+  editRess=[]; ressLibreIdx=null;
+  Object.entries(raci||{}).forEach(([n,l])=>editRess.push({nom:n, lettre:l||'R'}));
+  if(ressource && !editRess.some(r=>r.nom===ressource)) editRess.unshift({nom:ressource, lettre:'R'});
+  majRessListe();
 }
 function pickChamp(id){
-  const titres={'e-type':'RIDA','e-prio':'Priorisation','e-theme':'Thème','e-stheme':'Sous-thème','e-ress':'Ressource','e-th':'Heures','e-tm':'Minutes','e-dsel':'Date prévue'};
+  const titres={'e-type':'RIDA','e-prio':'Priorisation','e-theme':'Thème','e-stheme':'Sous-thème','e-th':'Heures','e-tm':'Minutes','e-dsel':'Date prévue'};
   const serre=(id==='e-th'||id==='e-tm');
   ddOuvrir(titres[id]||'', champOpts(id), $(id).value, v=>{
     setChamp(id,v);
     if(id==='e-dsel'){ $('e-dprev').style.display = v==='custom'?'block':'none'; if(v!=='custom') $('e-dprev').value=''; }
     if(id==='e-theme'){
-      majRaci();
       const lies=(etat.sthemes[v]||[]);
       if(lies.length && $('e-stheme').value && !lies.includes($('e-stheme').value)) setChamp('e-stheme','');
     }
@@ -741,7 +771,7 @@ function setDateForm(iso){
 }
 function getDateForm(){ const v=$('e-dsel').value; return v==='custom'? $('e-dprev').value : v; }
 function nouvelItem(prefill={}){
-  editId=null; editComs=[]; editRaci=Object.assign({}, prefill.raci||{});
+  editId=null; editComs=[];
   editLiens=(prefill.liens||[]).slice();
   if(prefill.lien) editLiens.push({n:'',u:prefill.lien});
   remplirSelects();
@@ -752,30 +782,30 @@ function nouvelItem(prefill={}){
   setChamp('e-type', prefill.type||'ACTION');
   setChamp('e-theme', prefill.theme||themeDef);
   setChamp('e-stheme', prefill.sousTheme||'');
-  setChamp('e-ress', prefill.ressource||ressDef);
+  initRess(prefill.ressource||ressDef, prefill.raci||{});
   setChamp('e-prio', String(prefill.priorite||2));
   setTempsForm(prefill.temps||0);
   setDateForm(prefill.datePrev||auj());
   $('e-avct').value = 0; $('e-av-val').textContent='0';
   $('e-suppr').style.display='none';
   $('e-lien-n').value=''; $('e-lien-u').value='';
-  majRaci(); rendreComs(); rendreLiens();
+  rendreComs(); rendreLiens();
   ouvrir('v-edit');
   setTimeout(()=>$('e-texte').focus(),80);
 }
 function editerItem(id){
   const i=trouver(id); if(!i) return;
-  editId=id; editComs=JSON.parse(JSON.stringify(i.comments||[])); editRaci=Object.assign({}, i.raci||{});
+  editId=id; editComs=JSON.parse(JSON.stringify(i.comments||[]));
   editLiens=(i.liens? JSON.parse(JSON.stringify(i.liens)) : (i.lien? [{n:'',u:i.lien}] : []));
   remplirSelects();
   $('e-titre').firstChild.textContent='Modifier ';
   $('e-texte').value=i.texte; setChamp('e-type',i.type); setChamp('e-theme',i.theme||'');
-  setChamp('e-stheme',i.sousTheme||''); setChamp('e-ress',i.ressource||'');
+  setChamp('e-stheme',i.sousTheme||''); initRess(i.ressource||'', i.raci||{});
   setChamp('e-prio',String(i.priorite)); setTempsForm(i.temps||0);
   setDateForm(i.datePrev||''); $('e-avct').value=i.avancement; $('e-av-val').textContent=i.avancement;
   $('e-suppr').style.display='block';
   $('e-lien-n').value=''; $('e-lien-u').value='';
-  majRaci(); rendreComs(); rendreLiens();
+  rendreComs(); rendreLiens();
   ouvrir('v-edit');
 }
 $('e-avct') && ($('e-avct').oninput = e=>$('e-av-val').textContent=e.target.value);
@@ -809,7 +839,7 @@ function sauverEdit(){
   if(uRestant) editLiens.push({n:$('e-lien-n').value.trim(), u:uRestant});
   $('e-lien-n').value=''; $('e-lien-u').value='';
   const data={ texte, liens:editLiens.slice(), lien:'', type:$('e-type').value, theme:$('e-theme').value, sousTheme:$('e-stheme').value,
-    ressource:$('e-ress').value, raci:Object.assign({},editRaci), priorite:+$('e-prio').value, temps:getTempsForm(),
+    ressource:(()=>{const p=editRess.find(r=>r.lettre==='R')||editRess[0]; return p?p.nom:'';})(), raci:(()=>{const o={}; editRess.forEach(r=>{ if(r.nom) o[r.nom]=r.lettre||'R'; }); return o;})(), priorite:+$('e-prio').value, temps:getTempsForm(),
     datePrev:getDateForm(), avancement:+$('e-avct').value, comments:editComs, upd:Date.now() };
   if(editId){ Object.assign(trouver(editId), data); if(data.avancement===10&&!trouver(editId).done){trouver(editId).done=true;trouver(editId).dateFin=auj();} }
   else etat.items.push(Object.assign({id:uid(), cre:new Date().toISOString(), done:false, dateFin:''}, data));
@@ -1136,6 +1166,7 @@ function htmlMoi(){
     const teinte=cejour?'f-noir':retard?'f-rouge':proche?'f-jaune':'';
     return `<div class="ligne-mini ${teinte}" onclick="editerItem('${i.id}')">
       <span class="lm-txt">${echap(i.texte)}</span>
+      ${i.temps?`<span class="lm-tps">⏱ ${fmtCompteur(i.temps)}</span>`:''}
       ${i.datePrev?`<span class="lm-date ${retard?'retard':''}">${fmtDate(i.datePrev)}${retard?' !':''}</span>`:''}
       <button class="ico ${cejour?'jr-on':'jr'}" onclick="event.stopPropagation();faireCeJour('${i.id}')" title="À faire ce jour">J</button>
       <button class="ico ok" onclick="event.stopPropagation();terminer('${i.id}')" title="Terminer">✓</button>
