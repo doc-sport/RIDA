@@ -143,9 +143,19 @@ select{font-size:13.5px}
 .ico.jr-on{background:#FFD44D;color:#16222E}
 .ico.pp{padding:2px 6px;font-size:10px}
 /* couleurs de fiches selon la date prévue */
-.carte.f-rouge{background:#FBE0D6;border-color:#EBAB94}
-.carte.f-jaune{background:#FBF0D2;border-color:#E8CD84}
-.carte.f-noir{background:var(--ink);border-color:var(--ink)}
+.carte.f-rouge,.ligne-mini.f-rouge{background:#FBE0D6;border-color:#EBAB94}
+.carte.f-jaune,.ligne-mini.f-jaune{background:#FBF0D2;border-color:#E8CD84}
+.carte.f-noir,.ligne-mini.f-noir{background:var(--ink);border-color:var(--ink)}
+.ligne-mini{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:11px;box-shadow:var(--shadow);padding:8px 12px;margin-bottom:7px;cursor:pointer}
+.ligne-mini .lm-txt{flex:1;font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ligne-mini .lm-date{font-family:'IBM Plex Mono';font-size:11.5px;color:var(--muted);flex:0 0 auto}
+.ligne-mini.f-noir .lm-txt{color:#fff}
+.ligne-mini.f-noir .lm-date{color:#9FB0C0}
+.ligne-mini.f-noir .ico{background:#2D3F51;color:#DCE5EE}
+.ligne-mini.f-noir .ico.ok{background:#1E5A3C;color:#8FE3B4}
+.ligne-mini.f-noir .ico.jr-on{background:#FFD44D;color:#16222E}
+.ligne-mini .lm-date.retard{color:var(--warn);font-weight:600}
+.moi-tete{font-size:13px;color:var(--muted);margin-bottom:10px}
 .carte.f-noir .l1{color:#9FB0C0}
 .carte.f-noir .l1 .ent{color:#7A8CA0}
 .carte.f-noir .l2{color:#fff}
@@ -274,6 +284,7 @@ select{font-size:13.5px}
 
 <nav id="nav">
   <button data-vue="encours" class="act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01" stroke-linecap="round"/></svg>En cours</button>
+  <button data-vue="moi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6" stroke-linecap="round"/></svg>Moi</button>
   <button data-vue="fini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>Terminées</button>
   <button data-vue="dash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" stroke-linecap="round"/></svg>Tableau</button>
   <button data-vue="reglages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.34 1.87l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.7 1.7 0 00-1.87-.34 1.7 1.7 0 00-1 1.55V21a2 2 0 11-4 0v-.09a1.7 1.7 0 00-1-1.55 1.7 1.7 0 00-1.87.34l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.7 1.7 0 00.34-1.87 1.7 1.7 0 00-1.55-1H3a2 2 0 110-4h.09a1.7 1.7 0 001.55-1 1.7 1.7 0 00-.34-1.87l-.06-.06a2 2 0 112.83-2.83l.06.06a1.7 1.7 0 001.87.34h0a1.7 1.7 0 001-1.55V3a2 2 0 114 0v.09a1.7 1.7 0 001 1.55h0a1.7 1.7 0 001.87-.34l.06-.06a2 2 0 112.83 2.83l-.06.06a1.7 1.7 0 00-.34 1.87v0a1.7 1.7 0 001.55 1H21a2 2 0 110 4h-.09a1.7 1.7 0 00-1.55 1z"/></svg>Réglages</button>
@@ -363,7 +374,7 @@ select{font-size:13.5px}
 
 <script>
 'use strict';
-const VERSION='4.4';
+const VERSION='4.5';
 // --- diagnostic : affiche toute erreur JavaScript en bandeau rouge ---
 window.addEventListener('error', e=>{
   try{
@@ -474,9 +485,10 @@ const pomo = { restant:25*60, actif:false, tick:null,
    ============================================================ */
 function rendre(){
   document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('act', b.dataset.vue===vue));
-  $('fabs').style.display = (vue==='encours'||vue==='fini') ? 'flex':'none';
+  $('fabs').style.display = (vue==='encours'||vue==='fini'||vue==='moi') ? 'flex':'none';
   const m = $('main');
   if(vue==='encours') { m.innerHTML = htmlListe(false); majListe(); }
+  else if(vue==='moi') m.innerHTML = htmlMoi();
   else if(vue==='fini') { m.innerHTML = htmlListe(true); majListe(); }
   else if(vue==='dash') m.innerHTML = htmlDash();
   else m.innerHTML = htmlReglages();
@@ -1093,6 +1105,43 @@ function supprimerNote(id){
   if(!etat.notes[noteTheme].length) delete etat.notes[noteTheme];
   if(noteEditId===id) annulerEditionNote();
   persister(); rendreNotes(); rendre();
+}
+
+/* ============================================================
+   VUE « MOI » — mes actions en une ligne
+   ============================================================ */
+function moiPersonne(){
+  return etat.lists.ressources.find(r=>norm(r)==='eric') || etat.lists.ressources.find(r=>norm(r).startsWith('eric')) || '';
+}
+function estAMoi(i){
+  const moi=moiPersonne(); if(!moi) return false;
+  const l=(i.raci||{})[moi];
+  if(l) return l==='R';
+  return i.ressource===moi;
+}
+function htmlMoi(){
+  const jour=auj();
+  const j8=(()=>{ const d=new Date(); d.setDate(d.getDate()+8); return d.toISOString().slice(0,10); })();
+  const moi=moiPersonne();
+  if(!moi) return '<div class="vide"><b>Personne « Eric » introuvable</b>Ajoute « Eric » dans les ressources (Réglages) pour activer cette vue.</div>';
+  let items=etat.items.filter(i=>!i.done && i.type==='ACTION' && estAMoi(i));
+  items.sort((a,b)=>(a.datePrev||'9999').localeCompare(b.datePrev||'9999') || (a.priorite-b.priorite));
+  const tot=items.reduce((s,i)=>s+(i.temps||0),0);
+  const tete=`<div class="moi-tete">${items.length} action${items.length>1?'s':''} dont tu es responsable${tot?' · ⏱ '+fmtCompteur(tot):''}</div>`;
+  if(!items.length) return tete+'<div class="vide"><b>Rien à ton nom</b>Les actions dont tu es responsable (R ou ressource) apparaîtront ici.</div>';
+  return tete + items.map(i=>{
+    const retard=i.datePrev && i.datePrev<jour;
+    const cejour=i.datePrev===jour;
+    const proche=i.datePrev && i.datePrev>jour && i.datePrev<=j8;
+    const teinte=cejour?'f-noir':retard?'f-rouge':proche?'f-jaune':'';
+    return `<div class="ligne-mini ${teinte}" onclick="editerItem('${i.id}')">
+      <span class="lm-txt">${echap(i.texte)}</span>
+      ${i.datePrev?`<span class="lm-date ${retard?'retard':''}">${fmtDate(i.datePrev)}${retard?' !':''}</span>`:''}
+      <button class="ico ${cejour?'jr-on':'jr'}" onclick="event.stopPropagation();faireCeJour('${i.id}')" title="À faire ce jour">J</button>
+      <button class="ico ok" onclick="event.stopPropagation();terminer('${i.id}')" title="Terminer">✓</button>
+      <button class="ico pp" onclick="event.stopPropagation();editerItem('${i.id}')" title="Modifier">✎</button>
+    </div>`;
+  }).join('');
 }
 
 /* ============================================================
