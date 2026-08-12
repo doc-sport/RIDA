@@ -137,6 +137,28 @@ select{font-size:13.5px}
 .avct-mini .fill{display:block;height:100%;background:var(--accent);border-radius:99px}
 .mini.jour{background:var(--amber-soft);color:var(--amber)}
 .mini.jour-on{background:var(--ink);color:#FFD44D}
+.ico{font-size:10.5px;font-weight:700;letter-spacing:.02em;padding:3px 8px;border-radius:999px;background:#EEF1F5;color:var(--ink);line-height:1.2}
+.ico.ok{background:var(--ok-soft);color:var(--ok)}
+.ico.jr{background:var(--amber-soft);color:var(--amber)}
+.ico.jr-on{background:#FFD44D;color:#16222E}
+.ico.pp{padding:2px 6px;font-size:10px}
+/* couleurs de fiches selon la date prévue */
+.carte.f-rouge{background:#FBE0D6;border-color:#EBAB94}
+.carte.f-jaune{background:#FBF0D2;border-color:#E8CD84}
+.carte.f-noir{background:var(--ink);border-color:var(--ink)}
+.carte.f-noir .l1{color:#9FB0C0}
+.carte.f-noir .l1 .ent{color:#7A8CA0}
+.carte.f-noir .l2{color:#fff}
+.carte.f-noir .chip,.carte.f-noir .rchip,.carte.f-noir .notebtn,.carte.f-noir .ico{background:#2D3F51;color:#DCE5EE}
+.carte.f-noir .ico.ok{background:#1E5A3C;color:#8FE3B4}
+.carte.f-noir .ico.jr-on{background:#FFD44D;color:#16222E}
+.carte.f-noir a.rchip.lienc{color:#9DB8FF}
+.carte.f-noir .avct-mini .barre{background:#33475A}
+.carte.f-noir .com{background:#22313F;color:#D6DEE6}
+.carte.f-noir .com .d{color:#8FA1B3}
+.carte.f-noir .rchip.lR b{color:#9DB8FF}
+.carte.f-noir .rchip.lA b{color:#F4C874}
+.carte.f-noir .rchip.lC b{color:#8FE3B4}
 .l2{font-weight:600;font-size:15px;cursor:pointer;margin-top:7px}
 .l2 .chip{font-weight:500}
 .c-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
@@ -341,7 +363,7 @@ select{font-size:13.5px}
 
 <script>
 'use strict';
-const VERSION='4.3';
+const VERSION='4.4';
 // --- diagnostic : affiche toute erreur JavaScript en bandeau rouge ---
 window.addEventListener('error', e=>{
   try{
@@ -533,10 +555,14 @@ function ddFiltre(cle){
 
 function carte(i){
   const jour = auj();
+  const j8=(()=>{ const d=new Date(); d.setDate(d.getDate()+8); return d.toISOString().slice(0,10); })();
   const retard = !i.done && i.datePrev && i.datePrev < jour;
   const cejour = i.datePrev === jour;
+  const proche = !i.done && i.datePrev && i.datePrev > jour && i.datePrev <= j8;
+  const teinte = i.done? '' : cejour? 'f-noir' : retard? 'f-rouge' : proche? 'f-jaune' : '';
   const dernierCom = (i.comments||[]).slice(-1)[0];
-  return `<div class="carte">
+  const btnJ = (!i.done && i.type==='ACTION')? `<button class="ico ${cejour?'jr-on':'jr'}" onclick="faireCeJour('${i.id}')" title="À faire ce jour (impacte le chrono)">J</button>` : '';
+  return `<div class="carte ${teinte}">
     <div class="l1">
       <span class="mono ent" title="Date d'entrée">${fmtDate((i.cre||'').slice(0,10))}</span>
       <span class="badge b-${i.type||'INFORMATION'}">${echap(i.type||'—')}</span>
@@ -544,17 +570,15 @@ function carte(i){
       <span class="badge b-p${i.priorite}">P${i.priorite}</span>
       ${i.done
         ? `<span class="mono">✓ ${fmtDate(i.dateFin)}</span>`
-        : `${i.datePrev?`<span class="mono ${retard?'retard':''}">📅 ${fmtDate(i.datePrev)}${retard?' !':''}</span>`:''}
+        : `${btnJ}${i.datePrev?`<span class="mono ${retard?'retard':''}">📅 ${fmtDate(i.datePrev)}${retard?' !':''}</span>`:''}
            ${i.temps?`<span class="mono">⏱ ${fmtMin(i.temps)}</span>`:''}
-           <span class="avct-mini"><span class="barre"><span class="fill" style="width:${i.avancement*10}%"></span></span><span class="mono">${i.avancement}/10</span></span>`}
+           <span class="avct-mini"><span class="barre"><span class="fill" style="width:${i.avancement*10}%"></span></span><span class="mono">${i.avancement}/10</span><button class="ico pp" onclick="bouger('${i.id}',1)" title="Avancer d'un cran">+1</button></span>`}
       <span class="l1-btns">
       ${i.done
-        ? `<button class="mini" onclick="rouvrir('${i.id}')">↩ Rouvrir</button>
-           <button class="mini" onclick="editerItem('${i.id}')">Détails</button>`
-        : `${i.type==='ACTION'?`<button class="mini ${cejour?'jour-on':'jour'}" onclick="faireCeJour('${i.id}')" title="Programmer pour aujourd'hui (impacte le chrono)">${cejour?'☀ Ce jour ✓':'☀ Ce jour'}</button>`:''}
-           <button class="mini" onclick="bouger('${i.id}',1)">+1</button>
-           <button class="mini ok" onclick="terminer('${i.id}')">✓ Terminé</button>
-           <button class="mini" onclick="editerItem('${i.id}')">✎</button>`}
+        ? `<button class="ico" onclick="rouvrir('${i.id}')" title="Rouvrir">↩</button>
+           <button class="ico pp" onclick="editerItem('${i.id}')" title="Détails">✎</button>`
+        : `<button class="ico ok" onclick="terminer('${i.id}')" title="Terminer et archiver">✓</button>
+           <button class="ico pp" onclick="editerItem('${i.id}')" title="Modifier">✎</button>`}
       </span>
     </div>
     <div class="l2" onclick="editerItem('${i.id}')">${echap(i.texte)} ${raciChips(i)}${lienChip(i)}</div>
@@ -711,13 +735,15 @@ function nouvelItem(prefill={}){
   remplirSelects();
   $('e-titre').firstChild.textContent = 'Nouvelle entrée ';
   $('e-texte').value = prefill.texte||'';
+  const themeDef = etat.lists.themes.find(t=>norm(t)==='eric')||'';
+  const ressDef = etat.lists.ressources.find(r=>norm(r)==='eric') || etat.lists.ressources.find(r=>norm(r).startsWith('eric')) || '';
   setChamp('e-type', prefill.type||'ACTION');
-  setChamp('e-theme', prefill.theme||'');
+  setChamp('e-theme', prefill.theme||themeDef);
   setChamp('e-stheme', prefill.sousTheme||'');
-  setChamp('e-ress', prefill.ressource||'');
+  setChamp('e-ress', prefill.ressource||ressDef);
   setChamp('e-prio', String(prefill.priorite||2));
   setTempsForm(prefill.temps||0);
-  setDateForm(prefill.datePrev||'');
+  setDateForm(prefill.datePrev||auj());
   $('e-avct').value = 0; $('e-av-val').textContent='0';
   $('e-suppr').style.display='none';
   $('e-lien-n').value=''; $('e-lien-u').value='';
