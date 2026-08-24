@@ -4,7 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#16222E">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="LYRA">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>LYRA — Anglais en chansons</title>
+<link rel="apple-touch-icon" id="icone-ios">
 <link rel="manifest" id="manifest-link">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1209,11 +1214,17 @@ function brancher(){
 document.querySelectorAll('.voile').forEach(v=>v.addEventListener('click', e=>{ if(e.target===v) fermer(v.id); }));
 document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ document.querySelectorAll('.voile.on').forEach(v=>fermer(v.id)); } });
 
-/* ---------- Manifeste PWA (installation sur mobile) ---------- */
+/* ---------- Manifeste PWA (installation sur mobile) ----------
+   start_url doit viser CETTE page : un simple « . » ouvrirait
+   index.html, c'est-à-dire RIDA, depuis l'icône de LYRA. */
 try{
   const ic='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#16222E"/><text x="50" y="67" font-family="sans-serif" font-weight="bold" font-size="40" fill="#FFD44D" text-anchor="middle">L</text></svg>');
-  const man={name:'LYRA — Anglais',short_name:'LYRA',start_url:'.',display:'standalone',background_color:'#F1F4F7',theme_color:'#16222E',
-    icons:[{src:ic,sizes:'any',type:'image/svg+xml'}]};
+  $('icone-ios').href=ic;
+  const page=location.href.split('#')[0].split('?')[0];
+  const dossier=page.replace(/[^/]*$/,'');
+  const man={id:page,name:'LYRA — Anglais',short_name:'LYRA',start_url:page,scope:dossier,display:'standalone',
+    background_color:'#F1F4F7',theme_color:'#16222E',lang:'fr',
+    icons:[{src:ic,sizes:'any',type:'image/svg+xml',purpose:'any'}]};
   $('manifest-link').href='data:application/manifest+json,'+encodeURIComponent(JSON.stringify(man));
 }catch(e){}
 
