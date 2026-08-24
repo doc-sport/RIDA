@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#16222E">
+<title>LYRA — Anglais en chansons</title>
+<link rel="manifest" id="manifest-link">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F1F4F7; --surface:#FFFFFF; --ink:#16222E; --muted:#5C6C7B;
+  --accent:#2148C0; --accent-soft:#E4EAFB; --warn:#C8401A; --warn-soft:#FBE8E1;
+  --ok:#1E7F4F; --ok-soft:#E1F3E9; --amber:#B07207; --amber-soft:#FBF0DC;
+  --violet:#5B3FA8; --violet-soft:#EDE7FB;
+  --line:#DEE5EC; --shadow:0 1px 3px rgba(22,34,46,.08),0 6px 18px rgba(22,34,46,.06);
+  --r:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.45;padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 11px;width:100%}
+textarea{line-height:1.5;resize:vertical}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+label{font-size:12.5px;font-weight:600;color:var(--muted);display:block;margin:12px 0 4px;text-transform:uppercase;letter-spacing:.04em}
+
+/* ---------- En-tête ---------- */
+header{background:var(--ink);color:#fff;padding:14px 16px 12px;position:sticky;top:0;z-index:40}
+.head-row{display:flex;align-items:flex-end;justify-content:space-between;max-width:880px;margin:0 auto;gap:12px}
+.brand{font-family:'Barlow Condensed';font-weight:700;font-size:26px;letter-spacing:.02em;line-height:1}
+.brand small{display:block;font-family:'Inter';font-weight:500;font-size:11.5px;color:#9FB0C0;letter-spacing:.06em;text-transform:uppercase;margin-top:3px}
+.kpis{display:flex;gap:7px;align-items:flex-end}
+.kpi{background:#243444;border:1px solid #35485C;border-radius:12px;padding:5px 10px 4px;text-align:center;min-width:56px}
+.kpi .v{font-family:'IBM Plex Mono';font-weight:600;font-size:17px;line-height:1.1;color:#FFD44D}
+.kpi .l{font-size:9.5px;color:#9FB0C0;text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+.kpi.urg{background:#7A2E14;border-color:#A94425}
+
+/* ---------- Onglets ---------- */
+nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--line);display:flex;z-index:50;padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;padding:9px 2px 8px;font-size:11px;font-weight:600;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button svg{width:21px;height:21px}
+nav button.act{color:var(--accent)}
+@media(min-width:720px){
+  body{padding-bottom:20px}
+  nav{position:sticky;top:64px;bottom:auto;max-width:880px;margin:12px auto 0;border:1px solid var(--line);border-radius:12px}
+  nav button{flex-direction:row;gap:7px;font-size:13.5px;padding:11px}
+}
+main{max-width:880px;margin:0 auto;padding:14px 14px 30px}
+
+/* ---------- Briques ---------- */
+.carte{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:13px 14px;margin-bottom:12px}
+.titre-sec{font-family:'Barlow Condensed';font-weight:700;font-size:19px;text-transform:uppercase;letter-spacing:.03em;margin:16px 0 8px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.titre-sec:first-child{margin-top:0}
+.btn{background:var(--accent);color:#fff;border-radius:10px;padding:9px 14px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.sec{background:var(--accent-soft);color:var(--accent)}
+.btn.gris{background:#EEF1F5;color:var(--muted)}
+.btn.dan{background:var(--warn-soft);color:var(--warn)}
+.btn.ok{background:var(--ok);color:#fff}
+.btn.plein{width:100%}
+.btn.pt{padding:6px 10px;font-size:12.5px;border-radius:9px}
+.rang{display:flex;gap:8px;flex-wrap:wrap}
+.vide{color:var(--muted);font-size:13.5px;text-align:center;padding:22px 10px;line-height:1.6}
+.puce{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:999px;padding:2px 8px;background:#EEF1F5;color:var(--muted)}
+.puce.a{background:var(--accent-soft);color:var(--accent)}
+.puce.o{background:var(--ok-soft);color:var(--ok)}
+.puce.w{background:var(--warn-soft);color:var(--warn)}
+.puce.j{background:var(--amber-soft);color:var(--amber)}
+.puce.v{background:var(--violet-soft);color:var(--violet)}
+.note{font-size:12.5px;color:var(--muted);line-height:1.55}
+.sep{height:1px;background:var(--line);margin:11px 0}
+
+/* ---------- Textes ---------- */
+.txt-e{display:flex;align-items:center;gap:11px;cursor:pointer}
+.txt-e .ic{width:40px;height:40px;border-radius:11px;background:var(--violet-soft);color:var(--violet);display:flex;align-items:center;justify-content:center;font-size:19px;flex:none}
+.txt-e .co{flex:1;min-width:0}
+.txt-e .ti{font-weight:600;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.txt-e .su{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ---------- Lecture ---------- */
+.lect-barre{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:11px}
+.lect{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:16px 15px;font-size:var(--lect-fs,17px);line-height:2.1}
+.lect .ligne{margin-bottom:3px;min-height:1.2em}
+.lect .ligne.strophe{height:12px}
+.lect .fr{display:block;font-size:13px;line-height:1.45;color:var(--muted);font-style:italic;margin:-4px 0 8px;padding-left:2px}
+.w{border-radius:6px;padding:1px 2px;margin:0 -1.5px;cursor:pointer;transition:background .12s}
+.w:hover{background:#EEF1F5}
+.w.sel{background:var(--amber-soft);box-shadow:inset 0 -2px 0 var(--amber)}
+.w.sel.b3{background:var(--accent-soft);box-shadow:inset 0 -2px 0 var(--accent)}
+.w.sel.b5{background:var(--ok-soft);box-shadow:inset 0 -2px 0 var(--ok)}
+.selbar{position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:60;display:none;gap:8px;justify-content:center}
+.selbar.on{display:flex}
+.selbar button{background:var(--ink);color:#fff;border-radius:999px;padding:10px 15px;font-size:13px;font-weight:600;box-shadow:0 6px 20px rgba(22,34,46,.3)}
+
+/* ---------- Lexique ---------- */
+.mot-e{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.mot-e:last-child{border-bottom:none}
+.mot-e .m{font-weight:600;font-size:15.5px}
+.mot-e .p{font-family:'IBM Plex Mono';font-size:11.5px;color:var(--muted)}
+.mot-e .t{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mot-e .co{flex:1;min-width:0}
+.boites{display:flex;gap:3px;flex:none}
+.boites i{width:7px;height:7px;border-radius:50%;background:var(--line);display:block}
+.boites i.on{background:var(--ok)}
+.filtres{display:flex;gap:6px;overflow-x:auto;padding-bottom:3px;margin-bottom:10px;-webkit-overflow-scrolling:touch}
+.filtres button{flex:none;font-size:12.5px;font-weight:600;padding:6px 11px;border-radius:999px;background:#EEF1F5;color:var(--muted);white-space:nowrap}
+.filtres button.act{background:var(--ink);color:#fff}
+
+/* ---------- Modales ---------- */
+.voile{position:fixed;inset:0;background:rgba(22,34,46,.5);z-index:100;display:none;align-items:flex-end;justify-content:center;padding:0}
+.voile.on{display:flex}
+@media(min-width:720px){.voile{align-items:center;padding:20px}}
+.modal{background:var(--surface);border-radius:18px 18px 0 0;width:100%;max-width:640px;max-height:92vh;overflow-y:auto;padding:16px 15px calc(20px + env(safe-area-inset-bottom))}
+@media(min-width:720px){.modal{border-radius:18px;max-height:88vh}}
+.m-titre{font-family:'Barlow Condensed';font-weight:700;font-size:21px;text-transform:uppercase;letter-spacing:.03em;display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.m-titre button{font-size:26px;line-height:.8;color:var(--muted);padding:0 4px}
+
+/* ---------- Fiche mot ---------- */
+.fiche-tete{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.fiche-mot{font-family:'Barlow Condensed';font-weight:700;font-size:34px;line-height:1.05}
+.fiche-phon{font-family:'IBM Plex Mono';font-size:14px;color:var(--muted)}
+.hp{background:var(--accent-soft);color:var(--accent);border-radius:999px;width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;font-size:15px;flex:none}
+.trad-l{display:flex;gap:9px;align-items:baseline;padding:6px 0;border-bottom:1px dashed var(--line)}
+.trad-l:last-child{border-bottom:none}
+.trad-l b{font-size:15px}
+.trad-l span{font-size:12.5px;color:var(--muted)}
+.ex{background:#F6F8FA;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:9px;padding:9px 11px;margin-bottom:8px}
+.ex.src{border-left-color:var(--amber);background:var(--amber-soft)}
+.ex .en{font-size:14.5px;display:flex;gap:8px;align-items:flex-start}
+.ex .en b{font-weight:600}
+.ex .fr{font-size:12.5px;color:var(--muted);font-style:italic;margin-top:3px}
+.ex .et{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--amber);margin-bottom:3px}
+
+/* ---------- Quiz ---------- */
+.q-voile{position:fixed;inset:0;background:var(--bg);z-index:120;display:none;flex-direction:column}
+.q-voile.on{display:flex}
+.q-tete{background:var(--ink);color:#fff;padding:12px 15px calc(12px);display:flex;align-items:center;gap:12px;padding-top:calc(12px + env(safe-area-inset-top))}
+.q-tete .x{font-size:24px;line-height:.8;color:#9FB0C0}
+.q-jauge{flex:1;height:8px;background:#35485C;border-radius:99px;overflow:hidden}
+.q-jauge i{display:block;height:100%;background:#FFD44D;border-radius:99px;transition:width .3s}
+.q-score{font-family:'IBM Plex Mono';font-weight:600;font-size:15px;color:#FFD44D;min-width:42px;text-align:right}
+.q-corps{flex:1;overflow-y:auto;padding:18px 15px calc(24px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto;width:100%}
+.q-consigne{font-size:12.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.q-enonce{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:20px 16px;text-align:center;margin-bottom:16px}
+.q-mot{font-family:'Barlow Condensed';font-weight:700;font-size:34px;line-height:1.1;word-break:break-word}
+.q-phrase{font-size:17px;line-height:1.6}
+.q-phrase .trou{display:inline-block;min-width:74px;border-bottom:2.5px solid var(--accent);vertical-align:-2px;margin:0 2px}
+.q-sous{font-size:12.5px;color:var(--muted);margin-top:7px;font-style:italic}
+.q-opt{display:block;width:100%;text-align:left;background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:13px 14px;margin-bottom:9px;font-size:15px;font-weight:500;transition:transform .08s}
+.q-opt:active{transform:scale(.99)}
+.q-opt.bon{border-color:var(--ok);background:var(--ok-soft);color:var(--ok);font-weight:600}
+.q-opt.mauv{border-color:var(--warn);background:var(--warn-soft);color:var(--warn)}
+.q-fb{border-radius:12px;padding:12px 13px;margin-top:12px;font-size:13.5px;line-height:1.55}
+.q-fb.bon{background:var(--ok-soft);color:var(--ok)}
+.q-fb.mauv{background:var(--warn-soft);color:var(--warn)}
+.q-fb b{display:block;font-size:15px;margin-bottom:3px}
+.combo{font-size:12px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.05em}
+.q-fin{text-align:center;padding:10px 0}
+.q-fin .gros{font-family:'Barlow Condensed';font-weight:700;font-size:58px;line-height:1;color:var(--accent)}
+.q-fin .sub{font-size:14px;color:var(--muted);margin:6px 0 18px}
+.barres{display:flex;align-items:flex-end;gap:6px;height:76px;margin:10px 0 4px}
+.barres div{flex:1;background:var(--accent-soft);border-radius:5px 5px 0 0;position:relative;min-height:3px}
+.barres div b{position:absolute;bottom:-17px;left:0;right:0;text-align:center;font-size:9.5px;color:var(--muted);font-weight:600}
+.barres+.note{margin-top:20px}
+
+/* ---------- Divers ---------- */
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom));background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-size:13.5px;font-weight:500;z-index:200;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;text-align:center}
+#toast.on{opacity:1}
+.chargement{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:tourne .7s linear infinite}
+.chargement.sombre{border-color:rgba(33,72,192,.25);border-top-color:var(--accent)}
+@keyframes tourne{to{transform:rotate(360deg)}}
+.expl{font-size:14px;line-height:1.6}
+.expl p{margin-bottom:9px}
+.expl b{font-weight:600}
+.expl code{font-family:'IBM Plex Mono';font-size:13px;background:#EEF1F5;padding:1px 5px;border-radius:5px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="head-row">
+    <div class="brand">LYRA<small>Anglais · chansons &amp; poèmes</small></div>
+    <div class="kpis" id="kpis"></div>
+  </div>
+</header>
+
+<nav id="nav">
+  <button data-vue="textes" class="act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13" stroke-linecap="round"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>Textes</button>
+  <button data-vue="lexique"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20" stroke-linecap="round"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" stroke-linejoin="round"/></svg>Lexique</button>
+  <button data-vue="quiz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9.2 9a3 3 0 015.7 1c0 2-3 2.5-3 4" stroke-linecap="round"/><path d="M12 17.5h.01" stroke-linecap="round"/></svg>Quiz</button>
+  <button data-vue="grammaire"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h13" stroke-linecap="round"/><path d="M18 15l2.5 2.5L18 20" stroke-linecap="round" stroke-linejoin="round"/></svg>Grammaire</button>
+  <button data-vue="reglages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.34 1.87l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.7 1.7 0 00-1.87-.34 1.7 1.7 0 00-1 1.55V21a2 2 0 11-4 0v-.09a1.7 1.7 0 00-1-1.55 1.7 1.7 0 00-1.87.34l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.7 1.7 0 00.34-1.87 1.7 1.7 0 00-1.55-1H3a2 2 0 110-4h.09a1.7 1.7 0 001.55-1 1.7 1.7 0 00-.34-1.87l-.06-.06a2 2 0 112.83-2.83l.06.06a1.7 1.7 0 001.87.34 1.7 1.7 0 001-1.55V3a2 2 0 114 0v.09a1.7 1.7 0 001 1.55 1.7 1.7 0 001.87-.34l.06-.06a2 2 0 112.83 2.83l-.06.06a1.7 1.7 0 00-.34 1.87 1.7 1.7 0 001.55 1H21a2 2 0 110 4h-.09a1.7 1.7 0 00-1.55 1z"/></svg>Réglages</button>
+</nav>
+
+<main id="main"></main>
+
+<div class="selbar" id="selbar">
+  <button id="sel-mot">➕ Ajouter l'expression</button>
+  <button id="sel-gram">❓ Expliquer la tournure</button>
+</div>
+
+<div class="voile" id="v-mot"><div class="modal" id="mot-corps"></div></div>
+<div class="voile" id="v-regle"><div class="modal" id="regle-corps"></div></div>
+<div class="voile" id="v-form"><div class="modal" id="form-corps"></div></div>
+<div class="q-voile" id="v-quiz">
+  <div class="q-tete">
+    <button class="x" id="q-quitter" aria-label="Quitter">×</button>
+    <div class="q-jauge"><i id="q-jauge"></i></div>
+    <div class="q-score" id="q-score">0</div>
+  </div>
+  <div class="q-corps" id="q-corps"></div>
+</div>
+<div id="toast"></div>
+
+<script>
+/* ============================================================
+   LYRA — apprendre l'anglais à partir de chansons et de poèmes
+   Application autonome : tout est stocké sur cet appareil.
+   ============================================================ */
+const $=id=>document.getElementById(id);
+const CLE='lyra';
+const JOUR=86400000;
+/* Répétition espacée (Leitner) : délai avant la prochaine révision, par boîte */
+const DELAIS=[0,0,1,3,7,21];
+const NATURES=['nom','verbe','adjectif','adverbe','expression','préposition','conjonction','pronom','interjection','autre'];
+
+/* ---------- Utilitaires ---------- */
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+function echap(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toast(m,ms){ const t=$('toast'); t.textContent=m; t.classList.add('on'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('on'), ms||2600); }
+function ouvrir(id){ $(id).classList.add('on'); }
+function fermer(id){ $(id).classList.remove('on'); }
+function aujourdhui(){ return new Date().toISOString().slice(0,10); }
+/* Normalisation d'un mot : minuscules, sans ponctuation ni accent */
+function norm(m){
+  return String(m||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[’]/g,"'").replace(/^[^a-z0-9']+|[^a-z0-9']+$/g,'').replace(/^'+|'+$/g,'').trim();
+}
+/* Comparaison souple pour les réponses écrites */
+function souple(s){ return norm(s).replace(/[^a-z0-9]/g,''); }
+function melanger(t){ const a=t.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function pioche(t,n){ return melanger(t).slice(0,n); }
+
+/* ---------- État ---------- */
+function neuf(){
+  return { textes:[], mots:[], regles:[],
+    reglages:{ claudeKey:'', effort:'medium', voix:'', debit:.9, longueur:10, taille:17 },
+    stats:{ jours:{}, serie:0, dernierJour:'' },
+    version:1, maj:Date.now() };
+}
+function charger(){
+  try{
+    const b=localStorage.getItem(CLE);
+    if(!b) return neuf();
+    const e=JSON.parse(b);
+    const d=neuf();
+    return Object.assign(d, e, { reglages:Object.assign(d.reglages, e.reglages||{}), stats:Object.assign(d.stats, e.stats||{}) });
+  }catch(x){ return neuf(); }
+}
+function persister(){
+  etat.maj=Date.now();
+  try{ localStorage.setItem(CLE, JSON.stringify(etat)); }
+  catch(x){ toast('Mémoire pleine : exporte tes données dans Réglages'); }
+}
+let etat=charger();
+let vue='textes', lectureId=null, filtreLex='tous', rechLex='';
+
+/* ---------- Prononciation (synthèse vocale) ---------- */
+let voix=[];
+function chargerVoix(){ try{ voix=speechSynthesis.getVoices()||[]; }catch(x){ voix=[]; } }
+chargerVoix();
+try{ speechSynthesis.onvoiceschanged=chargerVoix; }catch(x){}
+function voixAnglaise(){
+  if(!voix.length) chargerVoix();
+  const pref=etat.reglages.voix;
+  return voix.find(v=>v.name===pref) || voix.find(v=>/^en[-_]GB/i.test(v.lang)) || voix.find(v=>/^en/i.test(v.lang)) || null;
+}
+function parler(txt){
+  if(!txt) return;
+  try{
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(String(txt));
+    const v=voixAnglaise(); if(v){ u.voice=v; u.lang=v.lang; } else u.lang='en-GB';
+    u.rate=Number(etat.reglages.debit)||.9;
+    speechSynthesis.speak(u);
+  }catch(x){ toast('Synthèse vocale indisponible sur cet appareil'); }
+}
+window.dire=function(enc){ parler(decodeURIComponent(enc)); };
+
+/* ---------- Répétition espacée ---------- */
+function dus(liste){ const t=Date.now(); return liste.filter(o=>o.fiche!==false && (o.du||0)<=t); }
+function classer(o,juste){
+  o.vus=(o.vus||0)+1;
+  if(juste){ o.ok=(o.ok||0)+1; o.boite=Math.min(5,(o.boite||1)+1); }
+  else{ o.ko=(o.ko||0)+1; o.boite=Math.max(1,(o.boite||1)-1); }
+  o.du=Date.now()+DELAIS[o.boite]*JOUR;
+}
+function motsPrets(){ return etat.mots.filter(m=>m.statut==='fiche' && (m.trads||[]).length); }
+function marquerJour(juste){
+  const j=aujourdhui(), s=etat.stats;
+  if(!s.jours[j]) s.jours[j]={q:0,ok:0};
+  s.jours[j].q++; if(juste) s.jours[j].ok++;
+  if(s.dernierJour!==j){
+    const hier=new Date(Date.now()-JOUR).toISOString().slice(0,10);
+    s.serie = (s.dernierJour===hier)? (s.serie||0)+1 : 1;
+    s.dernierJour=j;
+  }
+}
+
+/* ---------- En-tête ---------- */
+function rendreKpis(){
+  const prets=motsPrets();
+  const aRev=dus(prets).length + dus(etat.regles).length;
+  $('kpis').innerHTML=
+    '<div class="kpi"><div class="v">'+etat.mots.length+'</div><div class="l">mots</div></div>'+
+    '<div class="kpi'+(aRev?' urg':'')+'"><div class="v">'+aRev+'</div><div class="l">à réviser</div></div>'+
+    '<div class="kpi"><div class="v">'+(etat.stats.serie||0)+'</div><div class="l">série</div></div>';
+}
+
+/* ---------- Routage ---------- */
+function rendre(){
+  rendreKpis();
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('act', b.dataset.vue===vue));
+  const m=$('main');
+  if(vue==='textes')        m.innerHTML = lectureId? vueLecture() : vueTextes();
+  else if(vue==='lexique')  m.innerHTML = vueLexique();
+  else if(vue==='quiz')     m.innerHTML = vueQuiz();
+  else if(vue==='grammaire')m.innerHTML = vueGrammaire();
+  else                      m.innerHTML = vueReglages();
+  brancher();
+  window.scrollTo(0, vue==='textes'&&lectureId? window._sy||0 : 0);
+}
+function aller(v){ vue=v; lectureId=null; window._sy=0; rendre(); }
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>aller(b.dataset.vue));
+
+/* ============================================================
+   1. TEXTES — saisie d'une chanson / d'un poème puis lecture
+   ============================================================ */
+function vueTextes(){
+  const t=etat.textes.slice().sort((a,b)=>b.cree-a.cree);
+  let h='<div class="titre-sec">Mes textes<button class="btn pt" onclick="formTexte()">＋ Nouveau</button></div>';
+  if(!t.length){
+    h+='<div class="carte"><div class="vide">Aucun texte pour l\'instant.<br>Colle les paroles d\'une chanson ou un poème,<br>puis clique sur les mots que tu ne connais pas.<br><br><button class="btn" onclick="formTexte()">＋ Ajouter un texte</button></div></div>';
+    return h;
+  }
+  t.forEach(x=>{
+    const n=etat.mots.filter(m=>m.texteId===x.id).length;
+    const ic=x.type==='poeme'?'✒️':'🎵';
+    h+='<div class="carte"><div class="txt-e" onclick="ouvrirTexte(\''+x.id+'\')">'+
+       '<div class="ic">'+ic+'</div><div class="co"><div class="ti">'+echap(x.titre||'Sans titre')+'</div>'+
+       '<div class="su">'+echap(x.auteur||'—')+' · '+n+' mot'+(n>1?'s':'')+' au lexique</div></div>'+
+       '<div class="puce'+(n?' j':'')+'">'+(x.texte.split(/\n/).length)+' lignes</div></div></div>';
+  });
+  return h;
+}
+
+window.formTexte=function(id){
+  const t=id? etat.textes.find(x=>x.id===id) : null;
+  $('form-corps').innerHTML=
+    '<div class="m-titre">'+(t?'Modifier le texte':'Nouveau texte')+'<button onclick="fermer(\'v-form\')">×</button></div>'+
+    '<label>Titre</label><input id="f-titre" value="'+echap(t?t.titre:'')+'" placeholder="Yesterday">'+
+    '<label>Auteur / interprète</label><input id="f-auteur" value="'+echap(t?t.auteur:'')+'" placeholder="The Beatles">'+
+    '<label>Type</label><select id="f-type"><option value="chanson"'+(t&&t.type==='poeme'?'':' selected')+'>Chanson</option><option value="poeme"'+(t&&t.type==='poeme'?' selected':'')+'>Poème</option></select>'+
+    '<label>Texte en anglais</label><textarea id="f-texte" rows="12" placeholder="Colle ici les paroles…">'+echap(t?t.texte:'')+'</textarea>'+
+    '<div class="rang" style="margin-top:14px"><button class="btn" style="flex:1" onclick="enregistrerTexte(\''+(id||'')+'\')">Enregistrer</button>'+
+    (t?'<button class="btn dan" onclick="supprimerTexte(\''+id+'\')">Supprimer</button>':'')+'</div>';
+  ouvrir('v-form');
+  setTimeout(()=>$('f-titre').focus(),80);
+};
+window.enregistrerTexte=function(id){
+  const titre=$('f-titre').value.trim(), auteur=$('f-auteur').value.trim(),
+        type=$('f-type').value, texte=$('f-texte').value.replace(/\r/g,'');
+  if(!texte.trim()){ toast('Le texte est vide'); return; }
+  if(id){
+    const t=etat.textes.find(x=>x.id===id);
+    Object.assign(t,{titre:titre,auteur:auteur,type:type});
+    if(t.texte!==texte){ t.texte=texte; t.trad=null; }
+  }else{
+    const t={id:uid(),titre:titre||'Sans titre',auteur:auteur,type:type,texte:texte,trad:null,cree:Date.now()};
+    etat.textes.push(t); lectureId=t.id;
+  }
+  persister(); fermer('v-form'); rendre();
+};
+window.supprimerTexte=function(id){
+  const n=etat.mots.filter(m=>m.texteId===id).length;
+  if(!confirm('Supprimer ce texte ?'+(n?'\nLes '+n+' mots déjà ajoutés restent dans le lexique.':''))) return;
+  etat.textes=etat.textes.filter(x=>x.id!==id);
+  persister(); fermer('v-form'); lectureId=null; rendre();
+};
+window.ouvrirTexte=function(id){ lectureId=id; window._sy=0; rendre(); };
+window.retourTextes=function(){ lectureId=null; rendre(); };
+
+/* ---------- Découpage du texte en mots cliquables ---------- */
+function morceaux(ligne){ return ligne.match(/[A-Za-zÀ-ɏ'’\-]+|[^A-Za-zÀ-ɏ'’\-]+/g)||[]; }
+function indexMots(){
+  const ix={};
+  etat.mots.forEach(m=>{ const k=norm(m.mot); if(k && !ix[k]) ix[k]=m; if(m.lemme){ const l=norm(m.lemme); if(l && !ix[l]) ix[l]=m; } });
+  return ix;
+}
+function vueLecture(){
+  const t=etat.textes.find(x=>x.id===lectureId);
+  if(!t){ lectureId=null; return vueTextes(); }
+  const ix=indexMots();
+  const aFaire=etat.mots.filter(m=>m.texteId===t.id && m.statut!=='fiche').length;
+  const lignes=t.texte.split('\n');
+  let corps='';
+  lignes.forEach((ligne,li)=>{
+    if(!ligne.trim()){ corps+='<div class="ligne strophe"></div>'; return; }
+    let h='';
+    morceaux(ligne).forEach(mo=>{
+      const k=norm(mo);
+      if(k && /[a-z]/i.test(mo)){
+        const m=ix[k];
+        const cl='w'+(m?' sel b'+(m.statut==='fiche'?(m.boite||1):1):'');
+        h+='<span class="'+cl+'" data-l="'+li+'">'+echap(mo)+'</span>';
+      }else h+=echap(mo);
+    });
+    corps+='<div class="ligne" data-l="'+li+'">'+h+'</div>';
+    if(t.trad && t.trad[li]) corps+='<span class="fr">'+echap(t.trad[li])+'</span>';
+  });
+  return '<div class="lect-barre">'+
+    '<button class="btn gris pt" onclick="retourTextes()">‹ Textes</button>'+
+    '<button class="btn sec pt" onclick="lireTexte()">🔊 Écouter</button>'+
+    '<button class="btn sec pt" onclick="traduireTexte()">'+(t.trad?'🈯 Masquer la traduction':'🈯 Traduire (IA)')+'</button>'+
+    (aFaire?'<button class="btn pt" onclick="enrichirLot(\''+t.id+'\')">✨ Enrichir '+aFaire+' mot'+(aFaire>1?'s':'')+'</button>':'')+
+    '<button class="btn gris pt" onclick="formTexte(\''+t.id+'\')">✎</button>'+
+    '</div>'+
+    '<div class="carte" style="padding:11px 13px"><div class="note">👆 <b>Clique sur chaque mot que tu ne connais pas</b> : il rejoint ton lexique. Sélectionne plusieurs mots pour ajouter une expression ou faire expliquer une tournure. Reclique sur un mot surligné pour ouvrir sa fiche.</div></div>'+
+    '<div class="titre-sec">'+echap(t.titre)+(t.auteur?' <span class="note" style="font-weight:400;text-transform:none">'+echap(t.auteur)+'</span>':'')+'</div>'+
+    '<div class="lect" id="lect" style="--lect-fs:'+(etat.reglages.taille||17)+'px">'+corps+'</div>';
+}
+
+/* ---------- Ajout / ouverture d'un mot depuis le texte ---------- */
+function ligneDe(t,li){ return (t.texte.split('\n')[li]||'').trim(); }
+function ajouterMot(expr, texteId, li){
+  const t=etat.textes.find(x=>x.id===texteId);
+  const cle=norm(expr);
+  if(!cle) return null;
+  const dejala=etat.mots.find(m=>norm(m.mot)===cle);
+  if(dejala) return dejala;
+  const m={ id:uid(), mot:expr.replace(/^[^A-Za-zÀ-ɏ']+|[^A-Za-zÀ-ɏ']+$/g,''),
+    lemme:'', nature:'', phon:'', trads:[], exemples:[], piege:'', collocs:[],
+    texteId:texteId, titreTexte:t?t.titre:'', ligne:li==null?'':ligneDe(t,li), ligneFr:'',
+    statut:'brut', boite:1, du:Date.now(), vus:0, ok:0, ko:0, cree:Date.now() };
+  etat.mots.push(m); persister();
+  return m;
+}
+function brancherLecture(){
+  const z=$('lect'); if(!z) return;
+  z.addEventListener('click', e=>{
+    const s=e.target.closest('.w'); if(!s) return;
+    if((window.getSelection().toString()||'').trim().split(/\s+/).length>1) return;
+    const mot=s.textContent, li=Number(s.dataset.l);
+    const ex=etat.mots.find(m=>norm(m.mot)===norm(mot)||(m.lemme&&norm(m.lemme)===norm(mot)));
+    window._sy=window.scrollY;
+    if(ex){ ficheMot(ex.id); return; }
+    const m=ajouterMot(mot, lectureId, li);
+    if(m){ s.classList.add('sel','b1'); rendreKpis(); majBarreEnrichir(); toast('« '+m.mot+' » ajouté au lexique'); }
+  });
+  const barre=$('selbar');
+  const verif=()=>{
+    const sel=(window.getSelection().toString()||'').trim();
+    const dans=window.getSelection().rangeCount && z.contains(window.getSelection().getRangeAt(0).commonAncestorContainer);
+    barre.classList.toggle('on', !!(sel && dans && sel.split(/\s+/).length>=1 && sel.length>1));
+    barre._sel=sel;
+    barre._l=(()=>{ try{ const n=window.getSelection().getRangeAt(0).startContainer;
+      const e=n.nodeType===1?n:n.parentElement; const p=e.closest('[data-l]'); return p?Number(p.dataset.l):null; }catch(x){ return null; } })();
+  };
+  ['mouseup','touchend','keyup'].forEach(ev=>z.addEventListener(ev,()=>setTimeout(verif,10)));
+  document.addEventListener('selectionchange',()=>{ if($('lect')) setTimeout(verif,10); });
+}
+function majBarreEnrichir(){
+  const b=document.querySelector('.lect-barre'); if(!b||!lectureId) return;
+  const t=etat.textes.find(x=>x.id===lectureId); if(!t) return;
+  const aFaire=etat.mots.filter(m=>m.texteId===t.id && m.statut!=='fiche').length;
+  const old=b.querySelector('.btn:not(.gris):not(.sec)');
+  if(aFaire && !old){ const btn=document.createElement('button'); btn.className='btn pt'; btn.onclick=()=>enrichirLot(t.id); b.insertBefore(btn, b.lastElementChild); }
+  const cible=b.querySelector('.btn:not(.gris):not(.sec)');
+  if(cible) cible.textContent='✨ Enrichir '+aFaire+' mot'+(aFaire>1?'s':'');
+}
+$('sel-mot').onclick=function(){
+  const sel=($('selbar')._sel||'').trim(), li=$('selbar')._l;
+  if(!sel) return;
+  const m=ajouterMot(sel, lectureId, li);
+  $('selbar').classList.remove('on'); window.getSelection().removeAllRanges();
+  if(m){ toast('« '+m.mot+' » ajouté au lexique'); window._sy=window.scrollY; rendre(); }
+};
+$('sel-gram').onclick=function(){
+  const sel=($('selbar')._sel||'').trim(), li=$('selbar')._l;
+  const t=etat.textes.find(x=>x.id===lectureId);
+  $('selbar').classList.remove('on'); window.getSelection().removeAllRanges();
+  formRegle('', sel, t?t.id:'', li==null?'':ligneDe(t,li));
+};
+window.lireTexte=function(){
+  const t=etat.textes.find(x=>x.id===lectureId); if(!t) return;
+  try{ if(speechSynthesis.speaking){ speechSynthesis.cancel(); toast('Lecture arrêtée'); return; } }catch(x){}
+  parler(t.texte);
+};
+
+/* ============================================================
+   2. INTELLIGENCE ARTIFICIELLE (Claude) — fiches de vocabulaire,
+      traduction du texte et explications de grammaire
+   ============================================================ */
+function cleIA(){ return (etat.reglages.claudeKey||'').trim(); }
+async function appelIA(systeme, message, schema, effort){
+  const cle=cleIA();
+  if(!cle) throw new Error('Aucune clé API : renseigne-la dans Réglages');
+  const r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':cle,'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true','anthropic-beta':'server-side-fallback-2026-07-01'},
+    body:JSON.stringify({ model:'claude-opus-5', max_tokens:8000, fallbacks:'default',
+      output_config:{ effort:effort||etat.reglages.effort||'medium', format:{type:'json_schema',schema:schema} },
+      system:systeme, messages:[{role:'user',content:message}] })
+  });
+  if(!r.ok){
+    let d=''; try{ const j=await r.json(); d=(j.error&&j.error.message)||''; }catch(x){}
+    throw new Error('API '+r.status+(d?' — '+d:''));
+  }
+  const j=await r.json();
+  if(j.stop_reason==='refusal') throw new Error('la requête a été refusée');
+  const bloc=(j.content||[]).find(b=>b.type==='text');
+  if(!bloc) throw new Error('réponse vide');
+  return JSON.parse(bloc.text);
+}
+
+const SCHEMA_MOT={type:'object',additionalProperties:false,
+  required:['lemme','nature','phonetique','traductions','exemples','sensDansLeTexte','traductionLigne','piege','collocations'],
+  properties:{
+    lemme:{type:'string',description:"Forme de base du mot (infinitif, singulier). Identique au mot si déjà en forme de base."},
+    nature:{type:'string',enum:NATURES},
+    phonetique:{type:'string',description:'Prononciation en alphabet phonétique international, entre barres obliques.'},
+    traductions:{type:'array',minItems:1,maxItems:5,items:{type:'object',additionalProperties:false,required:['fr','nuance'],
+      properties:{fr:{type:'string',description:'Traduction française'},nuance:{type:'string',description:"Contexte d'emploi, registre ou nuance, en une courte phrase française. Vide si évident."}}}},
+    exemples:{type:'array',minItems:2,maxItems:3,items:{type:'object',additionalProperties:false,required:['en','fr'],
+      properties:{en:{type:'string',description:'Phrase exemple en anglais contenant le mot'},fr:{type:'string',description:'Traduction française de la phrase'}}}},
+    sensDansLeTexte:{type:'string',description:"Le sens précis qu'a le mot dans le vers fourni, en français, une phrase."},
+    traductionLigne:{type:'string',description:'Traduction française du vers fourni. Vide si aucun vers fourni.'},
+    piege:{type:'string',description:'Faux-ami, difficulté de prononciation ou confusion fréquente pour un francophone. Vide si rien à signaler.'},
+    collocations:{type:'array',maxItems:4,items:{type:'string',description:'Expression ou collocation courante avec ce mot, suivie de sa traduction entre parenthèses'}}
+  }};
+
+async function ficheIA(m){
+  const t=etat.textes.find(x=>x.id===m.texteId);
+  const sys=[
+    "Tu es professeur d'anglais pour un francophone adulte, curieux et exigeant.",
+    "On te donne un mot ou une expression en anglais relevé dans "+(t?('« '+(t.titre||'un texte')+' »'+(t.auteur?' de '+t.auteur:'')):'un texte')+", ainsi que le vers d'où il provient.",
+    "Tu produis une fiche de vocabulaire en français.",
+    "traductions : de la plus courante à la plus rare ; ajoute la nuance d'emploi quand elle est utile.",
+    "exemples : 2 phrases courantes et naturelles, la première très simple, la seconde plus riche. N'y recopie jamais le vers du texte (il sera ajouté automatiquement à la suite).",
+    "Sois précis et concis : ce sont des fiches à réviser, pas un cours."
+  ].join('\n');
+  const msg='Mot : '+m.mot+(m.ligne?('\nVers : '+m.ligne):'\n(pas de vers fourni)');
+  const o=await appelIA(sys,msg,SCHEMA_MOT);
+  m.lemme=o.lemme||''; m.nature=o.nature||''; m.phon=o.phonetique||'';
+  m.trads=(o.traductions||[]).map(x=>({fr:x.fr,nuance:x.nuance||''}));
+  m.exemples=(o.exemples||[]).map(x=>({en:x.en,fr:x.fr,src:false}));
+  if(m.ligne) m.exemples.push({en:m.ligne,fr:o.traductionLigne||'',src:true});
+  m.sens=o.sensDansLeTexte||''; m.piege=o.piege||''; m.collocs=o.collocations||[];
+  m.statut='fiche'; m.du=Date.now();
+  persister();
+  return m;
+}
+window.enrichirMot=async function(id){
+  const m=etat.mots.find(x=>x.id===id); if(!m) return;
+  const b=$('b-enrichir'); if(b){ b.disabled=true; b.innerHTML='<span class="chargement"></span> Fiche en cours…'; }
+  try{ await ficheIA(m); ficheMot(id); toast('Fiche complétée'); rendreKpis(); }
+  catch(e){ toast('IA : '+e.message, 4200); if(b){ b.disabled=false; b.textContent='✨ Compléter avec l\'IA'; } }
+};
+window.enrichirLot=async function(texteId){
+  if(!cleIA()){ toast('Ajoute ta clé API dans Réglages pour utiliser l\'IA', 3800); return; }
+  const liste=etat.mots.filter(m=>(!texteId||m.texteId===texteId) && m.statut!=='fiche');
+  if(!liste.length){ toast('Tous les mots ont déjà leur fiche'); return; }
+  let n=0, err=0;
+  for(const m of liste){
+    toast('Fiches en cours… '+(n+1)+'/'+liste.length, 60000);
+    try{ await ficheIA(m); n++; }catch(e){ err++; if(err>=3){ toast('IA interrompue : '+e.message, 4500); break; } }
+  }
+  persister(); rendre();
+  toast(n+' fiche'+(n>1?'s':'')+' complétée'+(n>1?'s':'')+(err?' · '+err+' échec'+(err>1?'s':''):''), 3800);
+};
+
+const SCHEMA_TRAD={type:'object',additionalProperties:false,required:['lignes'],
+  properties:{lignes:{type:'array',items:{type:'object',additionalProperties:false,required:['n','fr'],
+    properties:{n:{type:'integer',description:'Numéro du vers tel que fourni'},fr:{type:'string',description:'Traduction française du vers'}}}}}};
+window.traduireTexte=async function(){
+  const t=etat.textes.find(x=>x.id===lectureId); if(!t) return;
+  if(t.trad){ t.trad=null; persister(); rendre(); return; }
+  if(!cleIA()){ toast('Ajoute ta clé API dans Réglages pour utiliser l\'IA', 3800); return; }
+  const lignes=t.texte.split('\n');
+  const num=lignes.map((l,i)=>({i:i,l:l})).filter(o=>o.l.trim());
+  toast('Traduction en cours…', 60000);
+  try{
+    const sys="Tu traduis en français un texte de chanson ou un poème anglais, vers par vers, pour un apprenant francophone.\n"+
+      "Traduction fidèle et naturelle, pas de paraphrase littéraire libre : elle doit aider à comprendre le sens exact de chaque vers.\n"+
+      "Renvoie une traduction pour chaque numéro fourni, sans en omettre aucun.";
+    const msg=(t.titre?('Titre : '+t.titre+'\n'):'')+(t.auteur?('Auteur : '+t.auteur+'\n\n'):'\n')+
+      num.map(o=>o.i+' | '+o.l).join('\n');
+    const o=await appelIA(sys,msg,SCHEMA_TRAD);
+    const tr={}; (o.lignes||[]).forEach(x=>{ tr[x.n]=x.fr; });
+    t.trad=tr; persister(); rendre(); toast('Traduction affichée');
+  }catch(e){ toast('IA : '+e.message, 4200); }
+};
+
+/* ============================================================
+   3. LEXIQUE — la fiche de chaque mot
+   ============================================================ */
+function etatMot(m){
+  if(m.statut!=='fiche') return '<span class="puce j">à compléter</span>';
+  if((m.boite||1)>=5) return '<span class="puce o">acquis</span>';
+  if((m.du||0)<=Date.now()) return '<span class="puce w">à réviser</span>';
+  return '<span class="puce a">boîte '+(m.boite||1)+'</span>';
+}
+function pointsBoite(b){ let h='<div class="boites">'; for(let i=1;i<=5;i++) h+='<i class="'+(i<=(b||1)?'on':'')+'"></i>'; return h+'</div>'; }
+
+window.ficheMot=function(id){
+  const m=etat.mots.find(x=>x.id===id); if(!m) return;
+  const t=etat.textes.find(x=>x.id===m.texteId);
+  let h='<div class="m-titre"><span>Fiche de vocabulaire</span><button onclick="fermer(\'v-mot\')">×</button></div>';
+  h+='<div class="fiche-tete"><span class="fiche-mot">'+echap(m.mot)+'</span>'+
+     '<button class="hp" onclick="dire(\''+encodeURIComponent(m.mot)+'\')" aria-label="Écouter">🔊</button>'+
+     (m.phon?'<span class="fiche-phon">'+echap(m.phon)+'</span>':'')+'</div>';
+  h+='<div class="rang" style="margin:8px 0 4px">'+etatMot(m)+
+     (m.nature?'<span class="puce v">'+echap(m.nature)+'</span>':'')+
+     (m.lemme&&norm(m.lemme)!==norm(m.mot)?'<span class="puce">base : '+echap(m.lemme)+'</span>':'')+
+     (m.vus?'<span class="puce">'+(m.ok||0)+'/'+m.vus+' réussites</span>':'')+'</div>';
+
+  if(m.statut!=='fiche'){
+    h+='<div class="sep"></div><div class="note">Ce mot attend sa fiche : traductions, exemples et piège éventuel.</div>'+
+       '<div class="rang" style="margin-top:12px"><button class="btn" id="b-enrichir" style="flex:1" onclick="enrichirMot(\''+m.id+'\')">✨ Compléter avec l\'IA</button>'+
+       '<button class="btn sec" onclick="formMot(\''+m.id+'\')">✎ À la main</button></div>';
+  }else{
+    h+='<div class="sep"></div><div class="titre-sec" style="margin:0 0 4px">Traductions</div>';
+    (m.trads||[]).forEach(tr=>{ h+='<div class="trad-l"><b>'+echap(tr.fr)+'</b>'+(tr.nuance?'<span>'+echap(tr.nuance)+'</span>':'')+'</div>'; });
+    if(m.sens) h+='<div class="note" style="margin-top:8px">🎯 <b>Dans ce texte</b> : '+echap(m.sens)+'</div>';
+    if((m.collocs||[]).length) h+='<div class="note" style="margin-top:8px">🔗 '+m.collocs.map(c=>echap(c)).join(' · ')+'</div>';
+    if(m.piege) h+='<div class="note" style="margin-top:8px;background:var(--warn-soft);color:var(--warn);padding:8px 10px;border-radius:9px">⚠️ '+echap(m.piege)+'</div>';
+    h+='<div class="titre-sec" style="margin:16px 0 6px">Exemples</div>';
+    (m.exemples||[]).forEach(ex=>{
+      h+='<div class="ex'+(ex.src?' src':'')+'">'+(ex.src?'<div class="et">'+echap(t?('« '+t.titre+' »'):'le texte')+'</div>':'')+
+         '<div class="en"><button class="hp" style="width:24px;height:24px;font-size:12px" onclick="dire(\''+encodeURIComponent(ex.en)+'\')">🔊</button><span>'+surligner(ex.en,m)+'</span></div>'+
+         (ex.fr?'<div class="fr">'+echap(ex.fr)+'</div>':'')+'</div>';
+    });
+    h+='<div class="sep"></div><div class="rang">'+
+       '<button class="btn sec pt" onclick="formMot(\''+m.id+'\')">✎ Modifier</button>'+
+       '<button class="btn sec pt" onclick="enrichirMot(\''+m.id+'\')" id="b-enrichir">✨ Refaire la fiche</button>'+
+       '<button class="btn gris pt" onclick="rejouerMot(\''+m.id+'\')">↺ À revoir</button>'+
+       '<button class="btn dan pt" onclick="supprimerMot(\''+m.id+'\')">Supprimer</button></div>';
+  }
+  if(t) h+='<div class="note" style="margin-top:12px">Relevé dans « '+echap(t.titre)+' »'+(t.auteur?' — '+echap(t.auteur):'')+'</div>';
+  $('mot-corps').innerHTML=h;
+  ouvrir('v-mot');
+};
+/* Met le mot en gras dans une phrase d'exemple */
+function surligner(phrase,m){
+  const cles=[norm(m.mot),norm(m.lemme)].filter(Boolean);
+  return morceaux(phrase).map(mo=>{
+    const k=norm(mo);
+    return (k&&cles.some(c=>k===c||(c.length>3&&k.startsWith(c))))? '<b>'+echap(mo)+'</b>' : echap(mo);
+  }).join('');
+}
+window.rejouerMot=function(id){ const m=etat.mots.find(x=>x.id===id); if(!m) return; m.boite=1; m.du=Date.now(); persister(); ficheMot(id); rendreKpis(); toast('Remis en révision'); };
+window.supprimerMot=function(id){
+  if(!confirm('Retirer ce mot du lexique ?')) return;
+  etat.mots=etat.mots.filter(m=>m.id!==id); persister(); fermer('v-mot'); rendre();
+};
+window.formMot=function(id){
+  const m=etat.mots.find(x=>x.id===id); if(!m) return;
+  const tr=(m.trads||[]).map(x=>x.fr+(x.nuance?' | '+x.nuance:'')).join('\n');
+  const ex=(m.exemples||[]).map(x=>x.en+(x.fr?' | '+x.fr:'')).join('\n');
+  $('form-corps').innerHTML=
+    '<div class="m-titre">Modifier « '+echap(m.mot)+' »<button onclick="fermer(\'v-form\')">×</button></div>'+
+    '<label>Mot ou expression</label><input id="e-mot" value="'+echap(m.mot)+'">'+
+    '<label>Forme de base</label><input id="e-lemme" value="'+echap(m.lemme||'')+'" placeholder="infinitif, singulier…">'+
+    '<label>Nature</label><select id="e-nature"><option value="">—</option>'+NATURES.map(n=>'<option'+(m.nature===n?' selected':'')+'>'+n+'</option>').join('')+'</select>'+
+    '<label>Prononciation</label><input id="e-phon" value="'+echap(m.phon||'')+'" placeholder="/ˈwɛðə/">'+
+    '<label>Traductions — une par ligne, « traduction | nuance »</label><textarea id="e-trads" rows="4">'+echap(tr)+'</textarea>'+
+    '<label>Exemples — une par ligne, « anglais | français »</label><textarea id="e-ex" rows="5">'+echap(ex)+'</textarea>'+
+    '<label>Piège / faux-ami</label><input id="e-piege" value="'+echap(m.piege||'')+'">'+
+    '<div class="rang" style="margin-top:14px"><button class="btn plein" onclick="enregistrerMot(\''+m.id+'\')">Enregistrer</button></div>';
+  ouvrir('v-form');
+};
+window.enregistrerMot=function(id){
+  const m=etat.mots.find(x=>x.id===id); if(!m) return;
+  const coupe=s=>{ const i=s.indexOf('|'); return i<0? [s.trim(),''] : [s.slice(0,i).trim(), s.slice(i+1).trim()]; };
+  m.mot=$('e-mot').value.trim()||m.mot;
+  m.lemme=$('e-lemme').value.trim(); m.nature=$('e-nature').value; m.phon=$('e-phon').value.trim();
+  m.trads=$('e-trads').value.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{ const c=coupe(l); return {fr:c[0],nuance:c[1]}; });
+  const srcAvant=(m.exemples||[]).filter(e=>e.src).map(e=>e.en);
+  m.exemples=$('e-ex').value.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{ const c=coupe(l); return {en:c[0],fr:c[1],src:srcAvant.indexOf(c[0])>=0}; });
+  m.piege=$('e-piege').value.trim();
+  if(m.trads.length) m.statut='fiche';
+  persister(); fermer('v-form'); ficheMot(id); rendre();
+};
+
+function vueLexique(){
+  const t=Date.now();
+  const compte={ tous:etat.mots.length,
+    brut:etat.mots.filter(m=>m.statut!=='fiche').length,
+    rev:etat.mots.filter(m=>m.statut==='fiche'&&(m.du||0)<=t).length,
+    acquis:etat.mots.filter(m=>(m.boite||1)>=5).length };
+  let liste=etat.mots.slice();
+  if(filtreLex==='brut')  liste=liste.filter(m=>m.statut!=='fiche');
+  if(filtreLex==='rev')   liste=liste.filter(m=>m.statut==='fiche'&&(m.du||0)<=t);
+  if(filtreLex==='acquis')liste=liste.filter(m=>(m.boite||1)>=5);
+  if(filtreLex.indexOf('txt:')===0){ const id=filtreLex.slice(4); liste=liste.filter(m=>m.texteId===id); }
+  if(rechLex){ const r=norm(rechLex); liste=liste.filter(m=>norm(m.mot).indexOf(r)>=0 || (m.trads||[]).some(x=>x.fr.toLowerCase().indexOf(rechLex.toLowerCase())>=0)); }
+  liste.sort((a,b)=>b.cree-a.cree);
+
+  let h='<input id="lex-rech" placeholder="Rechercher un mot ou une traduction…" value="'+echap(rechLex)+'" style="margin-bottom:10px">';
+  h+='<div class="filtres">'+
+     btnFiltre('tous','Tous ('+compte.tous+')')+
+     btnFiltre('brut','À compléter ('+compte.brut+')')+
+     btnFiltre('rev','À réviser ('+compte.rev+')')+
+     btnFiltre('acquis','Acquis ('+compte.acquis+')')+
+     etat.textes.map(x=>btnFiltre('txt:'+x.id, x.titre||'Sans titre')).join('')+'</div>';
+  if(compte.brut) h+='<div class="carte" style="display:flex;align-items:center;gap:10px"><div class="note" style="flex:1">'+compte.brut+' mot'+(compte.brut>1?'s attendent leur fiche':' attend sa fiche')+'.</div><button class="btn pt" onclick="enrichirLot(\'\')">✨ Tout compléter</button></div>';
+  if(!liste.length) return h+'<div class="carte"><div class="vide">Aucun mot ici.<br>Ouvre un texte et clique sur les mots inconnus.</div></div>';
+  h+='<div class="carte">';
+  liste.forEach(m=>{
+    const tr=(m.trads||[]).map(x=>x.fr).join(', ');
+    h+='<div class="mot-e" onclick="ficheMot(\''+m.id+'\')">'+
+       '<div class="co"><div class="m">'+echap(m.mot)+(m.phon?' <span class="p">'+echap(m.phon)+'</span>':'')+'</div>'+
+       '<div class="t">'+(tr?echap(tr):'<i>fiche à compléter</i>')+'</div></div>'+
+       (m.statut==='fiche'? pointsBoite(m.boite) : '<span class="puce j">à faire</span>')+'</div>';
+  });
+  return h+'</div>';
+}
+function btnFiltre(k,l){ return '<button class="'+(filtreLex===k?'act':'')+'" onclick="setFiltre(\''+k+'\')">'+echap(l)+'</button>'; }
+window.setFiltre=function(k){ filtreLex=k; rendre(); };
+
+/* ============================================================
+   4. GRAMMAIRE — tournures, structure de la langue, règles
+   ============================================================ */
+const SCHEMA_REGLE={type:'object',additionalProperties:false,
+  required:['titre','explication','structure','exemples','pieges','quiz'],
+  properties:{
+    titre:{type:'string',description:'Nom court de la règle ou de la tournure, en français (ex : « Le present perfect avec since et for »)'},
+    explication:{type:'string',description:"Explication claire en français, structurée en 2 à 5 paragraphes séparés par un retour à la ligne. Pars de l'exemple donné, puis généralise. Compare au français quand c'est éclairant."},
+    structure:{type:'string',description:'La formule de la structure, ex : « sujet + have/has + participe passé ». Vide si sans objet.'},
+    exemples:{type:'array',minItems:2,maxItems:4,items:{type:'object',additionalProperties:false,required:['en','fr'],
+      properties:{en:{type:'string'},fr:{type:'string'}}}},
+    pieges:{type:'string',description:"Erreurs typiques d'un francophone sur ce point. Vide si rien à signaler."},
+    quiz:{type:'array',minItems:3,maxItems:6,items:{type:'object',additionalProperties:false,required:['question','options','bonne','explication'],
+      properties:{
+        question:{type:'string',description:'Question ou phrase à trous (utilise ___ pour le trou), en anglais ou en français selon ce qui est testé'},
+        options:{type:'array',minItems:3,maxItems:4,items:{type:'string'}},
+        bonne:{type:'integer',description:'Index (à partir de 0) de la bonne réponse dans options'},
+        explication:{type:'string',description:'Pourquoi cette réponse est la bonne, en une ou deux phrases françaises'}}}}
+  }};
+
+window.formRegle=function(id, extrait, texteId, ligne){
+  const r=id? etat.regles.find(x=>x.id===id) : null;
+  const ex=r? r.extrait : (extrait||'');
+  const ctx=r? '' : (ligne&&ligne!==extrait? ligne : '');
+  $('form-corps').innerHTML=
+    '<div class="m-titre">'+(r?'Reprendre la question':'Question de grammaire')+'<button onclick="fermer(\'v-form\')">×</button></div>'+
+    (ex?'<div class="ex" style="margin-bottom:4px"><div class="en"><span>'+echap(ex)+'</span></div>'+(ctx?'<div class="fr">'+echap(ctx)+'</div>':'')+'</div>':'')+
+    '<label>Tournure étudiée</label><input id="g-extrait" value="'+echap(ex)+'" placeholder="I should have known">'+
+    '<label>Ta question (facultatif)</label><textarea id="g-question" rows="3" placeholder="Pourquoi « should have » et pas « should had » ? À quoi sert cette forme ?">'+echap(r?r.question:'')+'</textarea>'+
+    '<input type="hidden" id="g-texte" value="'+echap(texteId|| (r?r.texteId:'') ||'')+'">'+
+    '<input type="hidden" id="g-ligne" value="'+echap(ctx||(r?r.ligne:'')||'')+'">'+
+    '<div class="rang" style="margin-top:14px"><button class="btn plein" id="g-go" onclick="demanderRegle(\''+(id||'')+'\')">✨ Demander l\'explication</button></div>'+
+    '<div class="note" style="margin-top:10px">L\'explication est enregistrée comme fiche de grammaire, avec ses propres questions de quiz.</div>';
+  ouvrir('v-form');
+  setTimeout(()=>$('g-question').focus(),80);
+};
+window.demanderRegle=async function(id){
+  const extrait=$('g-extrait').value.trim(), question=$('g-question').value.trim();
+  const texteId=$('g-texte').value, ligne=$('g-ligne').value;
+  if(!extrait && !question){ toast('Indique une tournure ou une question'); return; }
+  if(!cleIA()){ toast('Ajoute ta clé API dans Réglages pour utiliser l\'IA', 3800); return; }
+  const b=$('g-go'); b.disabled=true; b.innerHTML='<span class="chargement"></span> Explication en cours…';
+  const t=etat.textes.find(x=>x.id===texteId);
+  const sys=[
+    "Tu es professeur d'anglais pour un francophone adulte qui veut comprendre la mécanique de la langue.",
+    "On te soumet une tournure relevée dans une chanson ou un poème, et parfois une question précise.",
+    "Tu expliques la structure en jeu : grammaire, syntaxe, temps, registre — clairement, sans jargon inutile, en français.",
+    "Signale quand la tournure relève de l'oral, du chant ou d'une licence poétique, et donne alors la forme standard.",
+    "Le quiz doit porter sur la règle expliquée et non sur le texte : des phrases nouvelles, de difficulté croissante."
+  ].join('\n');
+  const msg=[ 'Tournure : '+extrait,
+    ligne&&ligne!==extrait? 'Vers complet : '+ligne:'',
+    t? 'Extrait de « '+(t.titre||'')+' »'+(t.auteur?' — '+t.auteur:''):'',
+    question? 'Question : '+question : 'Question : explique cette tournure.' ].filter(Boolean).join('\n');
+  try{
+    const o=await appelIA(sys,msg,SCHEMA_REGLE,'high');
+    const base=id? etat.regles.find(x=>x.id===id) : null;
+    const r=base||{id:uid(),boite:1,du:Date.now(),vus:0,ok:0,ko:0,cree:Date.now()};
+    Object.assign(r,{ titre:o.titre||extrait, question:question, extrait:extrait, ligne:ligne, texteId:texteId,
+      explication:o.explication||'', structure:o.structure||'', exemples:o.exemples||[], pieges:o.pieges||'',
+      quiz:(o.quiz||[]).filter(q=>q.options&&q.options.length&&q.bonne>=0&&q.bonne<q.options.length) });
+    if(!base) etat.regles.push(r);
+    persister(); fermer('v-form'); vue='grammaire'; rendre(); ficheRegle(r.id);
+  }catch(e){
+    toast('IA : '+e.message, 4500);
+    b.disabled=false; b.textContent='✨ Demander l\'explication';
+  }
+};
+function vueGrammaire(){
+  const t=Date.now();
+  const aRev=etat.regles.filter(r=>(r.du||0)<=t).length;
+  let h='<div class="carte"><div class="rang"><button class="btn" style="flex:1" onclick="formRegle()">❓ Poser une question de grammaire</button></div>'+
+        '<div class="note" style="margin-top:9px">Depuis un texte, sélectionne la tournure puis « Expliquer la tournure » : la question part avec son contexte.</div></div>';
+  if(!etat.regles.length) return h+'<div class="carte"><div class="vide">Aucune fiche de grammaire.<br>Chaque explication demandée devient une fiche révisable,<br>avec ses questions de quiz.</div></div>';
+  h+='<div class="titre-sec">Mes fiches ('+etat.regles.length+')'+(aRev?'<span class="puce w">'+aRev+' à réviser</span>':'')+'</div>';
+  etat.regles.slice().sort((a,b)=>b.cree-a.cree).forEach(r=>{
+    h+='<div class="carte" onclick="ficheRegle(\''+r.id+'\')" style="cursor:pointer">'+
+       '<div style="display:flex;gap:10px;align-items:center"><div class="co" style="flex:1;min-width:0">'+
+       '<div class="ti" style="font-weight:600">'+echap(r.titre)+'</div>'+
+       '<div class="su note">'+(r.extrait?'« '+echap(r.extrait)+' »':'')+'</div></div>'+
+       pointsBoite(r.boite)+'</div></div>';
+  });
+  return h;
+}
+window.ficheRegle=function(id){
+  const r=etat.regles.find(x=>x.id===id); if(!r) return;
+  const t=etat.textes.find(x=>x.id===r.texteId);
+  let h='<div class="m-titre"><span>'+echap(r.titre)+'</span><button onclick="fermer(\'v-regle\')">×</button></div>';
+  if(r.extrait) h+='<div class="ex src"><div class="et">'+(t?echap('« '+t.titre+' »'):'tournure étudiée')+'</div>'+
+    '<div class="en"><button class="hp" style="width:24px;height:24px;font-size:12px" onclick="dire(\''+encodeURIComponent(r.ligne||r.extrait)+'\')">🔊</button><span>'+echap(r.ligne||r.extrait)+'</span></div></div>';
+  if(r.question) h+='<div class="note" style="margin:8px 0">❓ '+echap(r.question)+'</div>';
+  if(r.structure) h+='<div class="carte" style="background:var(--accent-soft);border-color:var(--accent-soft);box-shadow:none;margin:10px 0"><b>Structure :</b> '+echap(r.structure)+'</div>';
+  h+='<div class="expl" style="margin-top:10px">'+String(r.explication||'').split(/\n+/).filter(Boolean).map(p=>'<p>'+echap(p)+'</p>').join('')+'</div>';
+  if((r.exemples||[]).length){
+    h+='<div class="titre-sec" style="margin:14px 0 6px">Exemples</div>';
+    r.exemples.forEach(e=>{ h+='<div class="ex"><div class="en"><button class="hp" style="width:24px;height:24px;font-size:12px" onclick="dire(\''+encodeURIComponent(e.en)+'\')">🔊</button><span>'+echap(e.en)+'</span></div>'+(e.fr?'<div class="fr">'+echap(e.fr)+'</div>':'')+'</div>'; });
+  }
+  if(r.pieges) h+='<div class="note" style="margin-top:8px;background:var(--warn-soft);color:var(--warn);padding:9px 11px;border-radius:9px">⚠️ '+echap(r.pieges)+'</div>';
+  h+='<div class="sep"></div><div class="rang">'+
+     ((r.quiz||[]).length?'<button class="btn pt" onclick="fermer(\'v-regle\');lancerQuiz(\'regle:'+r.id+'\')">🎯 Me tester ('+r.quiz.length+')</button>':'')+
+     '<button class="btn sec pt" onclick="formRegle(\''+r.id+'\')">✎ Préciser ma question</button>'+
+     '<button class="btn gris pt" onclick="rejouerRegle(\''+r.id+'\')">↺ À revoir</button>'+
+     '<button class="btn dan pt" onclick="supprimerRegle(\''+r.id+'\')">Supprimer</button></div>';
+  $('regle-corps').innerHTML=h; ouvrir('v-regle');
+};
+window.rejouerRegle=function(id){ const r=etat.regles.find(x=>x.id===id); if(!r) return; r.boite=1; r.du=Date.now(); persister(); ficheRegle(id); rendreKpis(); toast('Remise en révision'); };
+window.supprimerRegle=function(id){
+  if(!confirm('Supprimer cette fiche de grammaire ?')) return;
+  etat.regles=etat.regles.filter(r=>r.id!==id); persister(); fermer('v-regle'); rendre();
+};
+
+/* ============================================================
+   5. QUIZ — vocabulaire et grammaire, en répétition espacée
+   ============================================================ */
+let Q=null;
+
+function vueQuiz(){
+  const t=Date.now(), prets=motsPrets();
+  const mDus=prets.filter(m=>(m.du||0)<=t).length;
+  const rDus=etat.regles.filter(r=>(r.quiz||[]).length&&(r.du||0)<=t).length;
+  const brut=etat.mots.length-prets.length;
+  let h='';
+  if(!prets.length && !etat.regles.length)
+    return '<div class="carte"><div class="vide">Rien à réviser pour l\'instant.<br>Ajoute des mots depuis un texte et complète leurs fiches,<br>ou pose une question de grammaire.</div></div>';
+
+  h+='<div class="carte" style="text-align:center">'+
+     '<div class="titre-sec" style="justify-content:center;margin:2px 0 8px">Séance du jour</div>'+
+     '<div class="note" style="margin-bottom:12px">'+(mDus+rDus? (mDus+rDus)+' élément'+(mDus+rDus>1?'s':'')+' à revoir aujourd\'hui.' : 'Rien d\'urgent : tu peux réviser librement.')+'</div>'+
+     '<button class="btn plein" onclick="lancerQuiz(\''+(mDus+rDus?'du':'mixte')+'\')">🎯 Commencer la séance</button>'+
+     '<div class="rang" style="margin-top:9px;justify-content:center">'+
+     (prets.length?'<button class="btn sec pt" onclick="lancerQuiz(\'vocab\')">Vocabulaire</button>':'')+
+     (etat.regles.some(r=>(r.quiz||[]).length)?'<button class="btn sec pt" onclick="lancerQuiz(\'gram\')">Grammaire</button>':'')+
+     '<button class="btn gris pt" onclick="lancerQuiz(\'mixte\')">Tout mélanger</button></div></div>';
+
+  if(etat.textes.length){
+    h+='<div class="titre-sec">Par texte</div><div class="carte"><div class="rang">'+
+      etat.textes.map(x=>{ const n=etat.mots.filter(m=>m.texteId===x.id&&m.statut==='fiche').length;
+        return n? '<button class="btn sec pt" onclick="lancerQuiz(\'txt:'+x.id+'\')">'+echap(x.titre)+' ('+n+')</button>':''; }).join('')+
+      '</div></div>';
+  }
+
+  /* Progression */
+  const boites=[0,0,0,0,0]; prets.forEach(m=>{ boites[Math.min(5,m.boite||1)-1]++; });
+  const maxB=Math.max(1,...boites);
+  h+='<div class="titre-sec">Progression</div><div class="carte">'+
+     '<div class="barres">'+boites.map((v,i)=>'<div style="height:'+Math.round(6+94*v/maxB)+'%'+(i===4?';background:var(--ok-soft)':'')+'"><b>'+(i===4?'acquis':'b'+(i+1))+'</b></div>').join('')+'</div>'+
+     '<div class="note">'+prets.length+' mot'+(prets.length>1?'s':'')+' en apprentissage'+(brut?' · '+brut+' fiche'+(brut>1?'s':'')+' à compléter':'')+' · '+etat.regles.length+' règle'+(etat.regles.length>1?'s':'')+'</div></div>';
+
+  const js=Object.keys(etat.stats.jours||{}).sort().slice(-7);
+  if(js.length){
+    const maxJ=Math.max(1,...js.map(j=>etat.stats.jours[j].q));
+    h+='<div class="carte"><div class="barres">'+js.map(j=>{
+      const o=etat.stats.jours[j];
+      return '<div style="height:'+Math.round(6+94*o.q/maxJ)+'%"><b>'+j.slice(8)+'/'+j.slice(5,7)+'</b></div>';
+    }).join('')+'</div><div class="note">Questions par jour — 7 derniers jours actifs. Série en cours : '+(etat.stats.serie||0)+' jour'+((etat.stats.serie||0)>1?'s':'')+'.</div></div>';
+  }
+  return h;
+}
+
+/* ---------- Fabrication des questions ---------- */
+function trad1(m){ return ((m.trads||[])[0]||{}).fr||''; }
+function distracteurs(m, pool, champ, n){
+  const bon=champ==='fr'? trad1(m).toLowerCase() : norm(m.mot);
+  const vus={};
+  return pioche(pool.filter(x=>x.id!==m.id),24)
+    .map(x=>champ==='fr'? trad1(x) : x.mot)
+    .filter(v=>{ const k=v.toLowerCase(); if(!v||k===bon||vus[k]) return false; vus[k]=1; return true; })
+    .slice(0,n);
+}
+function trouer(phrase,m){
+  const cles=[norm(m.mot),norm(m.lemme)].filter(Boolean);
+  let trouve=false;
+  const h=morceaux(phrase).map(mo=>{
+    const k=norm(mo);
+    if(k && cles.some(c=>k===c||(c.length>3&&k.indexOf(c)===0))){ trouve=true; return '<span class="trou"></span>'; }
+    return echap(mo);
+  }).join('');
+  return trouve? h : null;
+}
+function questionsMot(m, pool){
+  const qs=[], fr=trad1(m), tr=(m.trads||[]).map(x=>x.fr).join(', ');
+  const rappel='<b>'+echap(m.mot)+'</b> — '+echap(tr||fr);
+  const dis=distracteurs(m,pool,'fr',3), disEn=distracteurs(m,pool,'en',3);
+  if(fr && dis.length>=2){
+    const opts=melanger([fr].concat(dis));
+    qs.push({cible:m, consigne:'Que veut dire ce mot ?', mode:'qcm', gros:m.mot, dire:m.mot,
+      options:opts, bonne:opts.indexOf(fr), expl:rappel});
+  }
+  if(fr && disEn.length>=2){
+    const opts=melanger([m.mot].concat(disEn));
+    qs.push({cible:m, consigne:'Comment dit-on en anglais ?', mode:'qcm', gros:fr,
+      options:opts, bonne:opts.indexOf(m.mot), expl:rappel, dire:m.mot});
+  }
+  const ex=(m.exemples||[]).filter(e=>trouer(e.en,m));
+  if(ex.length && disEn.length>=2){
+    const e=pioche(ex,1)[0], opts=melanger([m.mot].concat(disEn));
+    qs.push({cible:m, consigne:'Complète la phrase', mode:'qcm', phrase:trouer(e.en,m), sous:e.fr||'',
+      options:opts, bonne:opts.indexOf(m.mot), expl:rappel+'<br>'+echap(e.en), dire:e.en});
+  }
+  if(fr){
+    qs.push({cible:m, consigne:'Écris le mot anglais', mode:'saisie', gros:fr, sous:(m.nature?'('+m.nature+')':''),
+      reponses:[m.mot].concat(m.lemme?[m.lemme]:[]), expl:rappel, dire:m.mot});
+  }
+  if(fr && dis.length>=2 && 'speechSynthesis' in window){
+    const opts=melanger([fr].concat(dis));
+    qs.push({cible:m, consigne:'Écoute puis choisis la traduction', mode:'qcm', ecoute:m.mot,
+      options:opts, bonne:opts.indexOf(fr), expl:rappel, dire:m.mot});
+  }
+  return qs;
+}
+function questionsRegle(r){
+  return (r.quiz||[]).map(q=>({ cible:r, consigne:'Grammaire — '+r.titre, mode:'qcm',
+    phrase:echap(q.question).replace(/_{2,}/g,'<span class="trou"></span>'),
+    options:q.options.slice(), bonne:q.bonne, expl:echap(q.explication||''), dire:null }));
+}
+window.lancerQuiz=function(src){
+  const t=Date.now(), n=Number(etat.reglages.longueur)||10;
+  const prets=motsPrets();
+  let mots=[], regles=[];
+  if(src.indexOf('regle:')===0){ const r=etat.regles.find(x=>x.id===src.slice(6)); if(r) regles=[r]; }
+  else if(src.indexOf('txt:')===0){ mots=prets.filter(m=>m.texteId===src.slice(4)); }
+  else if(src==='vocab'){ mots=prets; }
+  else if(src==='gram'){ regles=etat.regles.filter(r=>(r.quiz||[]).length); }
+  else if(src==='du'){ mots=prets.filter(m=>(m.du||0)<=t); regles=etat.regles.filter(r=>(r.quiz||[]).length&&(r.du||0)<=t); }
+  else { mots=prets; regles=etat.regles.filter(r=>(r.quiz||[]).length); }
+
+  /* On complète une séance trop courte avec des mots pas encore dus */
+  let choixMots=melanger(mots);
+  if(src==='du' && choixMots.length+regles.length<n) choixMots=choixMots.concat(melanger(prets.filter(m=>choixMots.indexOf(m)<0)));
+
+  const liste=[];
+  choixMots.forEach(m=>{ const qs=questionsMot(m,prets); if(qs.length) liste.push(pioche(qs,1)[0]); });
+  melanger(regles).forEach(r=>{ const qs=melanger(questionsRegle(r)); qs.slice(0, src.indexOf('regle:')===0? 99 : 2).forEach(q=>liste.push(q)); });
+  const final=(src.indexOf('regle:')===0? liste : melanger(liste)).slice(0, src.indexOf('regle:')===0? liste.length : n);
+  if(!final.length){ toast('Pas encore assez de fiches complétées pour un quiz'); return; }
+  Q={liste:final, i:0, score:0, justes:0, combo:0, meilleur:0, erreurs:[], repondu:false};
+  ouvrir('v-quiz'); rendreQuestion();
+};
+$('q-quitter').onclick=function(){
+  if(Q && !Q.fini && Q.i<Q.liste.length && !confirm('Quitter la séance en cours ?')) return;
+  fermer('v-quiz'); Q=null; rendre();
+};
+
+function rendreQuestion(){
+  const q=Q.liste[Q.i];
+  $('q-jauge').style.width=Math.round(100*Q.i/Q.liste.length)+'%';
+  $('q-score').textContent=Q.score;
+  Q.repondu=false;
+  let enonce='';
+  if(q.ecoute) enonce='<button class="hp" style="width:64px;height:64px;font-size:28px" onclick="dire(\''+encodeURIComponent(q.ecoute)+'\')">🔊</button><div class="q-sous">Appuie pour réécouter</div>';
+  else if(q.phrase) enonce='<div class="q-phrase">'+q.phrase+'</div>'+(q.sous?'<div class="q-sous">'+echap(q.sous)+'</div>':'');
+  else enonce='<div class="q-mot">'+echap(q.gros||'')+'</div>'+(q.sous?'<div class="q-sous">'+echap(q.sous)+'</div>':'');
+
+  let h='<div class="q-consigne"><span>'+echap(q.consigne)+'</span><span>'+(Q.i+1)+'/'+Q.liste.length+
+        (Q.combo>=2?' <span class="combo">🔥 x'+Q.combo+'</span>':'')+'</span></div>'+
+        '<div class="q-enonce">'+enonce+'</div><div id="q-rep">';
+  if(q.mode==='qcm') h+=q.options.map((o,i)=>'<button class="q-opt" data-i="'+i+'">'+echap(o)+'</button>').join('');
+  else h+='<input id="q-saisie" placeholder="En anglais…" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false">'+
+          '<div class="rang" style="margin-top:10px"><button class="btn" style="flex:1" id="q-valider">Vérifier</button>'+
+          '<button class="btn gris" id="q-passe">Je ne sais pas</button></div>';
+  h+='</div><div id="q-fb"></div>';
+  $('q-corps').innerHTML=h;
+  if(q.ecoute) setTimeout(()=>parler(q.ecoute),350);
+  if(q.mode==='qcm'){
+    $('q-rep').querySelectorAll('.q-opt').forEach(b=>b.onclick=()=>repondre(Number(b.dataset.i)));
+  }else{
+    const inp=$('q-saisie'); inp.focus();
+    inp.onkeydown=e=>{ if(e.key==='Enter') repondre(inp.value); };
+    $('q-valider').onclick=()=>repondre(inp.value);
+    $('q-passe').onclick=()=>repondre('');
+  }
+}
+function repondre(rep){
+  if(Q.repondu) return; Q.repondu=true;
+  const q=Q.liste[Q.i];
+  let juste;
+  if(q.mode==='qcm'){
+    juste = rep===q.bonne;
+    $('q-rep').querySelectorAll('.q-opt').forEach((b,i)=>{
+      if(i===q.bonne) b.classList.add('bon');
+      else if(i===rep) b.classList.add('mauv');
+      b.onclick=null;
+    });
+  }else{
+    juste = (q.reponses||[]).some(r=>souple(r)===souple(rep));
+    $('q-saisie').disabled=true; $('q-valider').disabled=true; $('q-passe').disabled=true;
+  }
+  if(juste){ Q.justes++; Q.combo++; Q.meilleur=Math.max(Q.meilleur,Q.combo); Q.score+=10+Math.min(10,(Q.combo-1)*2); }
+  else{ Q.combo=0; Q.erreurs.push(q); }
+  classer(q.cible, juste); marquerJour(juste); persister();
+
+  const bonneTxt = q.mode==='qcm'? q.options[q.bonne] : (q.reponses||[])[0];
+  $('q-fb').innerHTML='<div class="q-fb '+(juste?'bon':'mauv')+'"><b>'+(juste?'✅ Exact !':'❌ Réponse : '+echap(bonneTxt))+'</b>'+
+    (q.expl||'')+'</div>'+
+    '<div class="rang" style="margin-top:12px">'+
+    (q.dire?'<button class="btn sec" onclick="dire(\''+encodeURIComponent(q.dire)+'\')">🔊</button>':'')+
+    (q.cible && q.cible.mot? '<button class="btn gris" onclick="ficheMot(\''+q.cible.id+'\')">Voir la fiche</button>':
+     (q.cible&&q.cible.titre? '<button class="btn gris" onclick="ficheRegle(\''+q.cible.id+'\')">Voir la fiche</button>':''))+
+    '<button class="btn" style="flex:1" id="q-suite">'+(Q.i+1>=Q.liste.length?'Voir le résultat':'Suivant ›')+'</button></div>';
+  $('q-suite').focus();
+  $('q-suite').onclick=()=>{ Q.i++; if(Q.i>=Q.liste.length) rendreFin(); else rendreQuestion(); };
+  if(q.dire && juste && q.mode!=='saisie' && !q.ecoute) parler(q.dire);
+  rendreKpis();
+}
+function rendreFin(){
+  Q.fini=true;
+  $('q-jauge').style.width='100%';
+  const n=Q.liste.length, pct=Math.round(100*Q.justes/n);
+  const mot = pct>=90? 'Impeccable !' : pct>=70? 'Très bien.' : pct>=50? 'Ça vient.' : 'À retravailler.';
+  let h='<div class="q-fin"><div class="gros">'+Q.justes+'/'+n+'</div>'+
+    '<div class="sub">'+mot+' '+Q.score+' points'+(Q.meilleur>=3?' · meilleure série 🔥 x'+Q.meilleur:'')+'</div></div>';
+  if(Q.erreurs.length){
+    h+='<div class="titre-sec">À revoir ('+Q.erreurs.length+')</div><div class="carte">';
+    Q.erreurs.forEach(q=>{
+      const c=q.cible;
+      h+='<div class="mot-e" onclick="'+(c.mot?'ficheMot':'ficheRegle')+'(\''+c.id+'\')"><div class="co">'+
+         '<div class="m">'+echap(c.mot||c.titre)+'</div><div class="t">'+echap(c.mot? (c.trads||[]).map(x=>x.fr).join(', ') : (c.structure||c.extrait||''))+'</div></div>'+
+         '<span class="puce w">raté</span></div>';
+    });
+    h+='</div>';
+  }
+  h+='<div class="rang" style="margin-top:14px">'+
+     (Q.erreurs.length?'<button class="btn" style="flex:1" id="q-rejouer">↺ Rejouer les erreurs</button>':'')+
+     '<button class="btn '+(Q.erreurs.length?'gris':'')+'" style="flex:1" id="q-fin-ok">Terminer</button></div>';
+  $('q-corps').innerHTML=h;
+  $('q-fin-ok').onclick=()=>{ fermer('v-quiz'); Q=null; rendre(); };
+  if($('q-rejouer')) $('q-rejouer').onclick=()=>{
+    Q={liste:melanger(Q.erreurs), i:0, score:Q.score, justes:0, combo:0, meilleur:0, erreurs:[], repondu:false};
+    rendreQuestion();
+  };
+}
+
+/* ============================================================
+   6. RÉGLAGES, SAUVEGARDE, EXPORT
+   ============================================================ */
+function vueReglages(){
+  const s=etat.reglages;
+  const vx=voix.filter(v=>/^en/i.test(v.lang));
+  let h='<div class="titre-sec">Intelligence artificielle</div><div class="carte">'+
+    '<label>Clé API Anthropic</label><input id="r-cle" type="password" value="'+echap(s.claudeKey)+'" placeholder="sk-ant-…" autocomplete="off">'+
+    '<div class="note" style="margin-top:7px">'+(cleIA()
+      ? '✨ Fiches, traductions et explications activées. La clé reste sur cet appareil.'
+      : 'Sans clé, l\'application fonctionne mais les fiches et explications sont à écrire à la main. Clé à créer sur console.anthropic.com.')+'</div>'+
+    (localStorage.getItem('rida')&&!cleIA()? '<button class="btn sec pt" style="margin-top:9px" onclick="cleDepuisRida()">Reprendre la clé de RIDA</button>':'')+
+    '<label>Profondeur des réponses</label><select id="r-effort">'+
+      ['low|Rapide et économique','medium|Équilibré','high|Approfondi'].map(o=>{const c=o.split('|');
+        return '<option value="'+c[0]+'"'+(s.effort===c[0]?' selected':'')+'>'+c[1]+'</option>';}).join('')+'</select>'+
+    '</div>';
+
+  h+='<div class="titre-sec">Prononciation</div><div class="carte">'+
+    '<label>Voix anglaise</label><select id="r-voix"><option value="">Automatique</option>'+
+      vx.map(v=>'<option value="'+echap(v.name)+'"'+(s.voix===v.name?' selected':'')+'>'+echap(v.name+' — '+v.lang)+'</option>').join('')+'</select>'+
+    (vx.length? '':'<div class="note" style="margin-top:7px">Aucune voix anglaise détectée sur cet appareil.</div>')+
+    '<label>Débit : <span id="r-debit-v">'+s.debit+'</span></label>'+
+    '<input id="r-debit" type="range" min="0.5" max="1.2" step="0.05" value="'+s.debit+'" style="padding:0">'+
+    '<button class="btn sec pt" style="margin-top:10px" onclick="dire(\''+encodeURIComponent('Yesterday, all my troubles seemed so far away')+'\')">🔊 Tester la voix</button>'+
+    '</div>';
+
+  h+='<div class="titre-sec">Apprentissage</div><div class="carte">'+
+    '<label>Questions par séance : <span id="r-long-v">'+s.longueur+'</span></label>'+
+    '<input id="r-long" type="range" min="5" max="30" step="1" value="'+s.longueur+'" style="padding:0">'+
+    '<label>Taille du texte en lecture : <span id="r-taille-v">'+s.taille+' px</span></label>'+
+    '<input id="r-taille" type="range" min="14" max="24" step="1" value="'+s.taille+'" style="padding:0">'+
+    '<div class="note" style="margin-top:10px">Révision espacée : une réponse juste fait passer le mot à la boîte suivante (revu après 1, 3, 7 puis 21 jours) ; une erreur le ramène en arrière.</div>'+
+    '</div>';
+
+  h+='<div class="titre-sec">Données</div><div class="carte">'+
+    '<div class="rang"><button class="btn sec pt" onclick="exporter()">⬇ Sauvegarde (JSON)</button>'+
+    '<button class="btn sec pt" onclick="exporterCsv()">⬇ Lexique (CSV)</button>'+
+    '<button class="btn gris pt" onclick="document.getElementById(\'r-import\').click()">⬆ Restaurer</button></div>'+
+    '<input type="file" id="r-import" accept="application/json,.json" style="display:none">'+
+    '<div class="note" style="margin-top:9px">'+etat.textes.length+' texte'+(etat.textes.length>1?'s':'')+' · '+etat.mots.length+' mot'+(etat.mots.length>1?'s':'')+' · '+etat.regles.length+' règle'+(etat.regles.length>1?'s':'')+'. Tout est stocké sur cet appareil : pense à sauvegarder de temps en temps.</div>'+
+    '<div class="sep"></div><button class="btn dan pt" onclick="toutEffacer()">Tout effacer</button>'+
+    '</div>';
+  return h;
+}
+window.cleDepuisRida=function(){
+  try{
+    const r=JSON.parse(localStorage.getItem('rida')||'{}');
+    const k=((r.settings||{}).claudeKey||'').trim();
+    if(!k){ toast('Aucune clé trouvée dans RIDA'); return; }
+    etat.reglages.claudeKey=k; persister(); rendre(); toast('Clé récupérée');
+  }catch(x){ toast('Lecture impossible'); }
+};
+function telecharger(nom, contenu, type){
+  const b=new Blob([contenu],{type:type||'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=nom;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },500);
+}
+window.exporter=function(){ telecharger('lyra-'+aujourdhui()+'.json', JSON.stringify(etat,null,1)); toast('Sauvegarde téléchargée'); };
+window.exporterCsv=function(){
+  const q=s=>'"'+String(s==null?'':s).replace(/"/g,'""')+'"';
+  const l=['mot;traductions;nature;prononciation;exemple;traduction exemple;texte'];
+  etat.mots.forEach(m=>{
+    const ex=(m.exemples||[]).slice(-1)[0]||{};
+    l.push([m.mot,(m.trads||[]).map(x=>x.fr).join(', '),m.nature||'',m.phon||'',ex.en||'',ex.fr||'',m.titreTexte||''].map(q).join(';'));
+  });
+  telecharger('lexique-'+aujourdhui()+'.csv','﻿'+l.join('\n'),'text/csv');
+  toast('Lexique exporté');
+};
+window.toutEffacer=function(){
+  if(!confirm('Effacer tous les textes, mots et règles de cet appareil ?')) return;
+  if(!confirm('Confirmation : cette action est définitive. As-tu fait une sauvegarde ?')) return;
+  localStorage.removeItem(CLE); etat=neuf(); lectureId=null; vue='textes'; rendre(); toast('Données effacées');
+};
+
+/* ---------- Écouteurs propres à chaque vue ---------- */
+function brancher(){
+  if(vue==='textes' && lectureId) brancherLecture();
+  const r=$('lex-rech');
+  if(r) r.oninput=()=>{ rechLex=r.value; const p=r.selectionStart; rendre(); const n=$('lex-rech'); if(n){ n.focus(); n.setSelectionRange(p,p); } };
+  const cle=$('r-cle'); if(cle) cle.oninput=()=>{ etat.reglages.claudeKey=cle.value.trim(); persister(); };
+  const ef=$('r-effort'); if(ef) ef.onchange=()=>{ etat.reglages.effort=ef.value; persister(); };
+  const vx=$('r-voix'); if(vx) vx.onchange=()=>{ etat.reglages.voix=vx.value; persister(); };
+  const db=$('r-debit'); if(db) db.oninput=()=>{ etat.reglages.debit=Number(db.value); $('r-debit-v').textContent=db.value; persister(); };
+  const lo=$('r-long'); if(lo) lo.oninput=()=>{ etat.reglages.longueur=Number(lo.value); $('r-long-v').textContent=lo.value; persister(); };
+  const ta=$('r-taille'); if(ta) ta.oninput=()=>{ etat.reglages.taille=Number(ta.value); $('r-taille-v').textContent=ta.value+' px'; persister(); };
+  const im=$('r-import');
+  if(im) im.onchange=e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const fr=new FileReader();
+    fr.onload=()=>{
+      try{
+        const o=JSON.parse(fr.result);
+        if(!o || !Array.isArray(o.mots)) throw new Error('format');
+        if(!confirm('Remplacer les données actuelles par cette sauvegarde ?\n'+(o.textes||[]).length+' texte(s), '+o.mots.length+' mot(s).')) return;
+        etat=Object.assign(neuf(), o); persister(); lectureId=null; rendre(); toast('Sauvegarde restaurée');
+      }catch(x){ toast('Fichier illisible'); }
+    };
+    fr.readAsText(f);
+  };
+}
+document.querySelectorAll('.voile').forEach(v=>v.addEventListener('click', e=>{ if(e.target===v) fermer(v.id); }));
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ document.querySelectorAll('.voile.on').forEach(v=>fermer(v.id)); } });
+
+/* ---------- Manifeste PWA (installation sur mobile) ---------- */
+try{
+  const ic='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#16222E"/><text x="50" y="67" font-family="sans-serif" font-weight="bold" font-size="40" fill="#FFD44D" text-anchor="middle">L</text></svg>');
+  const man={name:'LYRA — Anglais',short_name:'LYRA',start_url:'.',display:'standalone',background_color:'#F1F4F7',theme_color:'#16222E',
+    icons:[{src:ic,sizes:'any',type:'image/svg+xml'}]};
+  $('manifest-link').href='data:application/manifest+json,'+encodeURIComponent(JSON.stringify(man));
+}catch(e){}
+
+rendre();
+</script>
+</body>
+</html>
