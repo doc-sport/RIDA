@@ -542,14 +542,14 @@ const SCHEMA_MOT={type:'object',additionalProperties:false,
     lemme:{type:'string',description:"Forme de base du mot (infinitif, singulier). Identique au mot si déjà en forme de base."},
     nature:{type:'string',enum:NATURES},
     phonetique:{type:'string',description:'Prononciation en alphabet phonétique international, entre barres obliques.'},
-    traductions:{type:'array',minItems:1,maxItems:5,items:{type:'object',additionalProperties:false,required:['fr','nuance'],
+    traductions:{type:'array',description:'De 1 à 5 traductions, de la plus courante à la plus rare.',items:{type:'object',additionalProperties:false,required:['fr','nuance'],
       properties:{fr:{type:'string',description:'Traduction française'},nuance:{type:'string',description:"Contexte d'emploi, registre ou nuance, en une courte phrase française. Vide si évident."}}}},
-    exemples:{type:'array',minItems:2,maxItems:3,items:{type:'object',additionalProperties:false,required:['en','fr'],
+    exemples:{type:'array',description:'Exactement 2 phrases exemples.',items:{type:'object',additionalProperties:false,required:['en','fr'],
       properties:{en:{type:'string',description:'Phrase exemple en anglais contenant le mot'},fr:{type:'string',description:'Traduction française de la phrase'}}}},
     sensDansLeTexte:{type:'string',description:"Le sens précis qu'a le mot dans le vers fourni, en français, une phrase."},
     traductionLigne:{type:'string',description:'Traduction française du vers fourni. Vide si aucun vers fourni.'},
     piege:{type:'string',description:'Faux-ami, difficulté de prononciation ou confusion fréquente pour un francophone. Vide si rien à signaler.'},
-    collocations:{type:'array',maxItems:4,items:{type:'string',description:'Expression ou collocation courante avec ce mot, suivie de sa traduction entre parenthèses'}}
+    collocations:{type:'array',description:'Au plus 4 collocations. Tableau vide si rien de notable.',items:{type:'string',description:'Expression ou collocation courante avec ce mot, suivie de sa traduction entre parenthèses'}}
   }};
 
 async function ficheIA(m){
@@ -756,13 +756,13 @@ const SCHEMA_REGLE={type:'object',additionalProperties:false,
     titre:{type:'string',description:'Nom court de la règle ou de la tournure, en français (ex : « Le present perfect avec since et for »)'},
     explication:{type:'string',description:"Explication claire en français, structurée en 2 à 5 paragraphes séparés par un retour à la ligne. Pars de l'exemple donné, puis généralise. Compare au français quand c'est éclairant."},
     structure:{type:'string',description:'La formule de la structure, ex : « sujet + have/has + participe passé ». Vide si sans objet.'},
-    exemples:{type:'array',minItems:2,maxItems:4,items:{type:'object',additionalProperties:false,required:['en','fr'],
+    exemples:{type:'array',description:'De 2 à 4 exemples illustrant la règle.',items:{type:'object',additionalProperties:false,required:['en','fr'],
       properties:{en:{type:'string'},fr:{type:'string'}}}},
     pieges:{type:'string',description:"Erreurs typiques d'un francophone sur ce point. Vide si rien à signaler."},
-    quiz:{type:'array',minItems:3,maxItems:6,items:{type:'object',additionalProperties:false,required:['question','options','bonne','explication'],
+    quiz:{type:'array',description:'De 3 à 6 questions portant sur la règle expliquée.',items:{type:'object',additionalProperties:false,required:['question','options','bonne','explication'],
       properties:{
         question:{type:'string',description:'Question ou phrase à trous (utilise ___ pour le trou), en anglais ou en français selon ce qui est testé'},
-        options:{type:'array',minItems:3,maxItems:4,items:{type:'string'}},
+        options:{type:'array',description:'3 ou 4 réponses possibles, dont une seule correcte.',items:{type:'string'}},
         bonne:{type:'integer',description:'Index (à partir de 0) de la bonne réponse dans options'},
         explication:{type:'string',description:'Pourquoi cette réponse est la bonne, en une ou deux phrases françaises'}}}}
   }};
