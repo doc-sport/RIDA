@@ -503,7 +503,17 @@ window.lireTexte=function(){
    2. INTELLIGENCE ARTIFICIELLE (Claude) — fiches de vocabulaire,
       traduction du texte et explications de grammaire
    ============================================================ */
-function cleIA(){ return (etat.reglages.claudeKey||'').trim(); }
+function cleIA(){ return (etat.reglages.claudeKey||'').replace(/\s+/g,''); }
+/* Traduit une erreur HTTP de l'API en message compréhensible */
+function messageErreur(statut, detail){
+  const d=(detail||'').toLowerCase();
+  if(statut===401) return 'Clé refusée (401) : elle est incomplète, révoquée, ou appartient à un autre compte. Recrée-en une sur console.anthropic.com → API Keys.';
+  if(statut===403) return "Accès refusé (403) : cette clé n'a pas le droit d'appeler l'API Messages.";
+  if(statut===400 && d.indexOf('credit')>=0) return 'Crédit épuisé : recharge le compte sur console.anthropic.com → Billing.';
+  if(statut===429) return 'Trop de requêtes d\'affilée (429) : attends une minute et réessaie.';
+  if(statut>=500) return 'Serveur Anthropic momentanément indisponible ('+statut+') : réessaie dans un instant.';
+  return 'Erreur '+statut+(detail?' — '+detail:'');
+}
 async function appelIA(systeme, message, schema, effort){
   const cle=cleIA();
   if(!cle) throw new Error('Aucune clé API : renseigne-la dans Réglages');
@@ -517,7 +527,7 @@ async function appelIA(systeme, message, schema, effort){
   });
   if(!r.ok){
     let d=''; try{ const j=await r.json(); d=(j.error&&j.error.message)||''; }catch(x){}
-    throw new Error('API '+r.status+(d?' — '+d:''));
+    throw new Error(messageErreur(r.status,d));
   }
   const j=await r.json();
   if(j.stop_reason==='refusal') throw new Error('la requête a été refusée');
@@ -573,13 +583,19 @@ window.enrichirLot=async function(texteId){
   if(!cleIA()){ toast('Ajoute ta clé API dans Réglages pour utiliser l\'IA', 3800); return; }
   const liste=etat.mots.filter(m=>(!texteId||m.texteId===texteId) && m.statut!=='fiche');
   if(!liste.length){ toast('Tous les mots ont déjà leur fiche'); return; }
-  let n=0, err=0;
+  let n=0, err=0, dernier='';
   for(const m of liste){
     toast('Fiches en cours… '+(n+1)+'/'+liste.length, 60000);
-    try{ await ficheIA(m); n++; }catch(e){ err++; if(err>=3){ toast('IA interrompue : '+e.message, 4500); break; } }
+    try{ await ficheIA(m); n++; }
+    catch(e){
+      err++; dernier=e.message;
+      /* Inutile d'insister quand la clé ou le crédit est en cause */
+      if(/refusée|Crédit|Accès refusé/.test(dernier) || err>=3) break;
+    }
   }
   persister(); rendre();
-  toast(n+' fiche'+(n>1?'s':'')+' complétée'+(n>1?'s':'')+(err?' · '+err+' échec'+(err>1?'s':''):''), 3800);
+  if(!n && dernier) toast(dernier, 8000);
+  else toast(n+' fiche'+(n>1?'s':'')+' complétée'+(n>1?'s':'')+(err?' · '+err+' échec'+(err>1?'s':''):''), 3800);
 };
 
 const SCHEMA_TRAD={type:'object',additionalProperties:false,required:['lignes'],
@@ -1070,11 +1086,16 @@ function vueReglages(){
   const s=etat.reglages;
   const vx=voix.filter(v=>/^en/i.test(v.lang));
   let h='<div class="titre-sec">Intelligence artificielle</div><div class="carte">'+
-    '<label>Clé API Anthropic</label><input id="r-cle" type="password" value="'+echap(s.claudeKey)+'" placeholder="sk-ant-…" autocomplete="off">'+
+    '<label>Clé API Anthropic</label>'+
+    '<div style="display:flex;gap:7px"><input id="r-cle" type="password" value="'+echap(s.claudeKey)+'" placeholder="sk-ant-…" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">'+
+    '<button class="btn gris" id="r-oeil" style="flex:none;padding:9px 12px" aria-label="Afficher la clé">👁</button></div>'+
     '<div class="note" style="margin-top:7px">'+(cleIA()
-      ? '✨ Fiches, traductions et explications activées. La clé reste sur cet appareil.'
-      : 'Sans clé, l\'application fonctionne mais les fiches et explications sont à écrire à la main. Clé à créer sur console.anthropic.com.')+'</div>'+
-    (localStorage.getItem('rida')&&!cleIA()? '<button class="btn sec pt" style="margin-top:9px" onclick="cleDepuisRida()">Reprendre la clé de RIDA</button>':'')+
+      ? '✨ Clé enregistrée : <code>'+echap(apercuCle(cleIA()))+'</code> — '+cleIA().length+' caractères.'+(cleIA().indexOf('sk-ant-')!==0? ' <b>Attention : une clé Anthropic commence par sk-ant-.</b>':'')
+      : 'Sans clé, l\'application fonctionne mais les fiches et explications sont à écrire à la main. Clé à créer sur console.anthropic.com → API Keys.')+'</div>'+
+    '<div class="rang" style="margin-top:9px">'+
+    (cleIA()? '<button class="btn sec pt" id="r-test">🔌 Tester la clé</button>':'')+
+    (localStorage.getItem('rida')? '<button class="btn gris pt" onclick="cleDepuisRida()">Reprendre la clé de RIDA</button>':'')+
+    '</div>'+
     '<label>Profondeur des réponses</label><select id="r-effort">'+
       ['low|Rapide et économique','medium|Équilibré','high|Approfondi'].map(o=>{const c=o.split('|');
         return '<option value="'+c[0]+'"'+(s.effort===c[0]?' selected':'')+'>'+c[1]+'</option>';}).join('')+'</select>'+
@@ -1107,10 +1128,26 @@ function vueReglages(){
     '</div>';
   return h;
 }
+function apercuCle(k){ return k.length>16? k.slice(0,11)+'…'+k.slice(-4) : k; }
+window.testerCle=async function(){
+  const b=$('r-test'); if(!b) return;
+  b.disabled=true; b.innerHTML='<span class="chargement sombre"></span> Test en cours…';
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':cleIA(),'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-opus-5',max_tokens:16,messages:[{role:'user',content:'ping'}]})
+    });
+    if(r.ok) toast('✅ Clé valide, l\'IA est opérationnelle');
+    else{ let d=''; try{ const j=await r.json(); d=(j.error&&j.error.message)||''; }catch(x){} toast(messageErreur(r.status,d), 8000); }
+  }catch(e){ toast('Connexion impossible : '+e.message, 6000); }
+  b.disabled=false; b.textContent='🔌 Tester la clé';
+};
 window.cleDepuisRida=function(){
   try{
     const r=JSON.parse(localStorage.getItem('rida')||'{}');
-    const k=((r.settings||{}).claudeKey||'').trim();
+    const k=((r.settings||{}).claudeKey||'').replace(/\s+/g,'');
     if(!k){ toast('Aucune clé trouvée dans RIDA'); return; }
     etat.reglages.claudeKey=k; persister(); rendre(); toast('Clé récupérée');
   }catch(x){ toast('Lecture impossible'); }
@@ -1143,7 +1180,12 @@ function brancher(){
   if(vue==='textes' && lectureId) brancherLecture();
   const r=$('lex-rech');
   if(r) r.oninput=()=>{ rechLex=r.value; const p=r.selectionStart; rendre(); const n=$('lex-rech'); if(n){ n.focus(); n.setSelectionRange(p,p); } };
-  const cle=$('r-cle'); if(cle) cle.oninput=()=>{ etat.reglages.claudeKey=cle.value.trim(); persister(); };
+  const cle=$('r-cle');
+  if(cle){ const maj=()=>{ etat.reglages.claudeKey=cle.value.replace(/\s+/g,''); persister(); };
+    cle.oninput=maj; cle.onchange=maj; cle.onblur=()=>{ maj(); rendre(); }; }
+  const oeil=$('r-oeil');
+  if(oeil) oeil.onclick=()=>{ const c=$('r-cle'); c.type = c.type==='password'? 'text':'password'; oeil.textContent = c.type==='password'? '👁':'🙈'; };
+  const test=$('r-test'); if(test) test.onclick=testerCle;
   const ef=$('r-effort'); if(ef) ef.onchange=()=>{ etat.reglages.effort=ef.value; persister(); };
   const vx=$('r-voix'); if(vx) vx.onchange=()=>{ etat.reglages.voix=vx.value; persister(); };
   const db=$('r-debit'); if(db) db.oninput=()=>{ etat.reglages.debit=Number(db.value); $('r-debit-v').textContent=db.value; persister(); };
