@@ -102,6 +102,8 @@ main{max-width:880px;margin:0 auto;padding:14px 14px 30px}
 /* ---------- Lexique ---------- */
 .mot-e{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);cursor:pointer}
 .mot-e:last-child{border-bottom:none}
+.sup{flex:none;color:var(--muted);font-size:17px;line-height:1;padding:6px 8px;border-radius:9px}
+.sup:hover,.sup:active{background:var(--warn-soft);color:var(--warn)}
 .mot-e .m{font-weight:600;font-size:15.5px}
 .mot-e .p{font-family:'IBM Plex Mono';font-size:11.5px;color:var(--muted)}
 .mot-e .t{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -171,6 +173,18 @@ main{max-width:880px;margin:0 auto;padding:14px 14px 30px}
 .barres+.note{margin-top:20px}
 
 /* ---------- Divers ---------- */
+/* ---------- Lecteur Spotify ---------- */
+.lecteur{position:fixed;left:0;right:0;bottom:calc(60px + env(safe-area-inset-bottom));z-index:45;display:none;
+  background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -4px 18px rgba(22,34,46,.10);padding:8px 12px 10px}
+.lecteur.on{display:block}
+@media(min-width:720px){.lecteur{bottom:0;max-width:880px;margin:0 auto;border:1px solid var(--line);border-radius:14px 14px 0 0}}
+.lecteur-tete{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.lecteur-tete b{font-size:12.5px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lecteur-tete a{font-size:11.5px;font-weight:600;color:var(--accent);text-decoration:none;flex:none}
+.lecteur-tete button{font-size:20px;line-height:.8;color:var(--muted);padding:0 4px;flex:none}
+.lecteur iframe{display:block;width:100%;height:80px;border:0;border-radius:12px}
+body.avec-lecteur{padding-bottom:calc(180px + env(safe-area-inset-bottom))}
+@media(min-width:720px){body.avec-lecteur{padding-bottom:130px}}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom));background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-size:13.5px;font-weight:500;z-index:200;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;text-align:center}
 #toast.on{opacity:1}
 .chargement{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:tourne .7s linear infinite}
@@ -200,6 +214,11 @@ main{max-width:880px;margin:0 auto;padding:14px 14px 30px}
 </nav>
 
 <main id="main"></main>
+
+<div class="lecteur" id="lecteur">
+  <div class="lecteur-tete"><b id="lecteur-titre"></b><a id="lecteur-lien" target="_blank" rel="noopener">Ouvrir dans Spotify ↗</a><button id="lecteur-x" aria-label="Fermer le lecteur">×</button></div>
+  <div id="lecteur-cadre"></div>
+</div>
 
 <div class="selbar" id="selbar">
   <button id="sel-mot">➕ Ajouter l'expression</button>
@@ -368,6 +387,8 @@ window.formTexte=function(id){
     '<label>Titre</label><input id="f-titre" value="'+echap(t?t.titre:'')+'" placeholder="Yesterday">'+
     '<label>Auteur / interprète</label><input id="f-auteur" value="'+echap(t?t.auteur:'')+'" placeholder="The Beatles">'+
     '<label>Type</label><select id="f-type"><option value="chanson"'+(t&&t.type==='poeme'?'':' selected')+'>Chanson</option><option value="poeme"'+(t&&t.type==='poeme'?' selected':'')+'>Poème</option></select>'+
+    '<label>Lien Spotify (facultatif)</label><input id="f-spotify" value="'+echap(t?(t.spotify||''):'')+'" placeholder="https://open.spotify.com/track/…" autocapitalize="off" autocorrect="off" spellcheck="false">'+
+    '<div class="note" style="margin-top:5px">Dans Spotify : ⋯ → Partager → Copier le lien. Le morceau s\'écoute alors depuis LYRA, sans quitter l\'app.</div>'+
     '<label>Texte en anglais</label><textarea id="f-texte" rows="12" placeholder="Colle ici les paroles…">'+echap(t?t.texte:'')+'</textarea>'+
     '<div class="rang" style="margin-top:14px"><button class="btn" style="flex:1" onclick="enregistrerTexte(\''+(id||'')+'\')">Enregistrer</button>'+
     (t?'<button class="btn dan" onclick="supprimerTexte(\''+id+'\')">Supprimer</button>':'')+'</div>';
@@ -376,25 +397,59 @@ window.formTexte=function(id){
 };
 window.enregistrerTexte=function(id){
   const titre=$('f-titre').value.trim(), auteur=$('f-auteur').value.trim(),
-        type=$('f-type').value, texte=$('f-texte').value.replace(/\r/g,'');
+        type=$('f-type').value, texte=$('f-texte').value.replace(/\r/g,''),
+        spotify=$('f-spotify').value.trim();
   if(!texte.trim()){ toast('Le texte est vide'); return; }
+  if(spotify && !spotifyEmbed(spotify)){ toast('Lien Spotify non reconnu — copie le lien depuis Partager', 4000); return; }
   if(id){
     const t=etat.textes.find(x=>x.id===id);
-    Object.assign(t,{titre:titre,auteur:auteur,type:type});
-    if(t.texte!==texte){ t.texte=texte; t.trad=null; }
+    Object.assign(t,{titre:titre,auteur:auteur,type:type,spotify:spotify});
+    if(t.texte!==texte){ t.texte=texte; t.trad=null; t.voirTrad=false; }
   }else{
-    const t={id:uid(),titre:titre||'Sans titre',auteur:auteur,type:type,texte:texte,trad:null,cree:Date.now()};
+    const t={id:uid(),titre:titre||'Sans titre',auteur:auteur,type:type,texte:texte,spotify:spotify,trad:null,voirTrad:false,cree:Date.now()};
     etat.textes.push(t); lectureId=t.id;
   }
   persister(); fermer('v-form'); rendre();
+  if(lectureId) ouvrirLecteur(lectureId);
 };
 window.supprimerTexte=function(id){
   const n=etat.mots.filter(m=>m.texteId===id).length;
   if(!confirm('Supprimer ce texte ?'+(n?'\nLes '+n+' mots déjà ajoutés restent dans le lexique.':''))) return;
   etat.textes=etat.textes.filter(x=>x.id!==id);
+  if(lecteurTexteId===id) fermerLecteur();
   persister(); fermer('v-form'); lectureId=null; rendre();
 };
-window.ouvrirTexte=function(id){ lectureId=id; window._sy=0; rendre(); };
+window.ouvrirTexte=function(id){ lectureId=id; window._sy=0; rendre(); ouvrirLecteur(id); };
+
+/* ---------- Lecteur Spotify ----------
+   L'iframe vit hors de <main> : elle survit aux réaffichages, donc la
+   musique continue pendant qu'on clique sur les mots ou qu'on révise. */
+function spotifyEmbed(u){
+  const t=String(u||'').trim();
+  let m=t.match(/^spotify:(track|album|playlist|episode|show):([A-Za-z0-9]+)/);
+  if(!m) m=t.match(/^https?:\/\/open\.spotify\.com\/(?:intl-[a-z-]+\/)?(track|album|playlist|episode|show)\/([A-Za-z0-9]+)/);
+  return m? 'https://open.spotify.com/embed/'+m[1]+'/'+m[2] : null;
+}
+let lecteurTexteId=null;
+window.ouvrirLecteur=function(id){
+  const t=etat.textes.find(x=>x.id===(id||lectureId));
+  if(!t || !t.spotify) return;
+  const src=spotifyEmbed(t.spotify);
+  if(!src){ toast('Lien Spotify non reconnu'); return; }
+  if(lecteurTexteId!==t.id){
+    lecteurTexteId=t.id;
+    $('lecteur-cadre').innerHTML='<iframe src="'+echap(src)+'" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>';
+    $('lecteur-titre').textContent=t.titre||'';
+    $('lecteur-lien').href=t.spotify;
+  }
+  $('lecteur').classList.add('on');
+  document.body.classList.add('avec-lecteur');
+};
+window.fermerLecteur=function(){
+  $('lecteur').classList.remove('on');
+  document.body.classList.remove('avec-lecteur');
+  $('lecteur-cadre').innerHTML=''; lecteurTexteId=null;
+};
 window.retourTextes=function(){ lectureId=null; rendre(); };
 
 /* ---------- Découpage du texte en mots cliquables ---------- */
@@ -423,12 +478,14 @@ function vueLecture(){
       }else h+=echap(mo);
     });
     corps+='<div class="ligne" data-l="'+li+'">'+h+'</div>';
-    if(t.trad && t.trad[li]) corps+='<span class="fr">'+echap(t.trad[li])+'</span>';
+    if(t.trad && t.voirTrad && t.trad[li]) corps+='<span class="fr">'+echap(t.trad[li])+'</span>';
   });
   return '<div class="lect-barre">'+
     '<button class="btn gris pt" onclick="retourTextes()">‹ Textes</button>'+
     '<button class="btn sec pt" onclick="lireTexte()">🔊 Écouter</button>'+
-    '<button class="btn sec pt" onclick="traduireTexte()">'+(t.trad?'🈯 Masquer la traduction':'🈯 Traduire (IA)')+'</button>'+
+    '<button class="btn '+(t.trad&&t.voirTrad?'':'sec ')+'pt" onclick="traduireTexte()">'+
+      (!t.trad? '🈯 Traduire (IA)' : t.voirTrad? '🇬🇧 Version anglaise' : '🇫🇷 Version traduite')+'</button>'+
+    (t.spotify? '<button class="btn sec pt" onclick="ouvrirLecteur()">🎧 Écouter le titre</button>':'')+
     (aFaire?'<button class="btn pt" onclick="enrichirLot(\''+t.id+'\')">✨ Enrichir '+aFaire+' mot'+(aFaire>1?'s':'')+'</button>':'')+
     '<button class="btn gris pt" onclick="formTexte(\''+t.id+'\')">✎</button>'+
     '</div>'+
@@ -485,6 +542,7 @@ function majBarreEnrichir(){
   const cible=b.querySelector('.btn:not(.gris):not(.sec)');
   if(cible) cible.textContent='✨ Enrichir '+aFaire+' mot'+(aFaire>1?'s':'');
 }
+$('lecteur-x').onclick=fermerLecteur;
 $('sel-mot').onclick=function(){
   const sel=($('selbar')._sel||'').trim(), li=$('selbar')._l;
   if(!sel) return;
@@ -608,7 +666,8 @@ const SCHEMA_TRAD={type:'object',additionalProperties:false,required:['lignes'],
     properties:{n:{type:'integer',description:'Numéro du vers tel que fourni'},fr:{type:'string',description:'Traduction française du vers'}}}}}};
 window.traduireTexte=async function(){
   const t=etat.textes.find(x=>x.id===lectureId); if(!t) return;
-  if(t.trad){ t.trad=null; persister(); rendre(); return; }
+  /* La traduction est conservée : le bouton ne fait qu'alterner les deux versions */
+  if(t.trad){ t.voirTrad=!t.voirTrad; persister(); rendre(); return; }
   if(!cleIA()){ toast('Ajoute ta clé API dans Réglages pour utiliser l\'IA', 3800); return; }
   const lignes=t.texte.split('\n');
   const num=lignes.map((l,i)=>({i:i,l:l})).filter(o=>o.l.trim());
@@ -621,7 +680,7 @@ window.traduireTexte=async function(){
       num.map(o=>o.i+' | '+o.l).join('\n');
     const o=await appelIA(sys,msg,SCHEMA_TRAD);
     const tr={}; (o.lignes||[]).forEach(x=>{ tr[x.n]=x.fr; });
-    t.trad=tr; persister(); rendre(); toast('Traduction affichée');
+    t.trad=tr; t.voirTrad=true; persister(); rendre(); toast('Traduction affichée — le bouton alterne les deux versions');
   }catch(e){ toast('IA : '+e.message, 4200); }
 };
 
@@ -651,7 +710,8 @@ window.ficheMot=function(id){
   if(m.statut!=='fiche'){
     h+='<div class="sep"></div><div class="note">Ce mot attend sa fiche : traductions, exemples et piège éventuel.</div>'+
        '<div class="rang" style="margin-top:12px"><button class="btn" id="b-enrichir" style="flex:1" onclick="enrichirMot(\''+m.id+'\')">✨ Compléter avec l\'IA</button>'+
-       '<button class="btn sec" onclick="formMot(\''+m.id+'\')">✎ À la main</button></div>';
+       '<button class="btn sec" onclick="formMot(\''+m.id+'\')">✎ À la main</button></div>'+
+       '<div class="rang" style="margin-top:8px"><button class="btn dan pt" onclick="supprimerMot(\''+m.id+'\')">Retirer du lexique</button></div>';
   }else{
     h+='<div class="sep"></div><div class="titre-sec" style="margin:0 0 4px">Traductions</div>';
     (m.trads||[]).forEach(tr=>{ h+='<div class="trad-l"><b>'+echap(tr.fr)+'</b>'+(tr.nuance?'<span>'+echap(tr.nuance)+'</span>':'')+'</div>'; });
@@ -745,7 +805,8 @@ function vueLexique(){
     h+='<div class="mot-e" onclick="ficheMot(\''+m.id+'\')">'+
        '<div class="co"><div class="m">'+echap(m.mot)+(m.phon?' <span class="p">'+echap(m.phon)+'</span>':'')+'</div>'+
        '<div class="t">'+(tr?echap(tr):'<i>fiche à compléter</i>')+'</div></div>'+
-       (m.statut==='fiche'? pointsBoite(m.boite) : '<span class="puce j">à faire</span>')+'</div>';
+       (m.statut==='fiche'? pointsBoite(m.boite) : '<span class="puce j">à faire</span>')+
+       '<button class="sup" title="Retirer du lexique" onclick="event.stopPropagation();supprimerMot(\''+m.id+'\')">✕</button></div>';
   });
   return h+'</div>';
 }
@@ -832,7 +893,8 @@ function vueGrammaire(){
        '<div style="display:flex;gap:10px;align-items:center"><div class="co" style="flex:1;min-width:0">'+
        '<div class="ti" style="font-weight:600">'+echap(r.titre)+'</div>'+
        '<div class="su note">'+(r.extrait?'« '+echap(r.extrait)+' »':'')+'</div></div>'+
-       pointsBoite(r.boite)+'</div></div>';
+       pointsBoite(r.boite)+
+       '<button class="sup" title="Supprimer la fiche" onclick="event.stopPropagation();supprimerRegle(\''+r.id+'\')">✕</button></div></div>';
   });
   return h;
 }
