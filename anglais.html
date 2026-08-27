@@ -227,6 +227,7 @@ body.avec-lecteur{padding-bottom:calc(180px + env(safe-area-inset-bottom))}
 
 <div class="voile" id="v-mot"><div class="modal" id="mot-corps"></div></div>
 <div class="voile" id="v-regle"><div class="modal" id="regle-corps"></div></div>
+<div class="voile" id="v-analyse"><div class="modal" id="analyse-corps"></div></div>
 <div class="voile" id="v-form"><div class="modal" id="form-corps"></div></div>
 <div class="q-voile" id="v-quiz">
   <div class="q-tete">
@@ -486,6 +487,7 @@ function vueLecture(){
     '<button class="btn '+(t.trad&&t.voirTrad?'':'sec ')+'pt" onclick="traduireTexte()">'+
       (!t.trad? '🈯 Traduire (IA)' : t.voirTrad? '🇬🇧 Version anglaise' : '🇫🇷 Version traduite')+'</button>'+
     (t.spotify? '<button class="btn sec pt" onclick="ouvrirLecteur()">🎧 Écouter le titre</button>':'')+
+    '<button class="btn sec pt" onclick="analyseTexte()">🎓 '+(t.analyse?'Commentaire':'Commenter (IA)')+'</button>'+
     (aFaire?'<button class="btn pt" onclick="enrichirLot(\''+t.id+'\')">✨ Enrichir '+aFaire+' mot'+(aFaire>1?'s':'')+'</button>':'')+
     '<button class="btn gris pt" onclick="formTexte(\''+t.id+'\')">✎</button>'+
     '</div>'+
@@ -661,9 +663,70 @@ window.enrichirLot=async function(texteId){
   else toast(n+' fiche'+(n>1?'s':'')+' complétée'+(n>1?'s':'')+(err?' · '+err+' échec'+(err>1?'s':''):''), 3800);
 };
 
+const SCHEMA_ANALYSE={type:'object',additionalProperties:false,
+  required:['sujet','contexte','lecture','anecdotes','langue','aRetenir','incertain'],
+  properties:{
+    sujet:{type:'string',description:'De quoi parle la chanson ou le poème, en deux ou trois phrases françaises. Le propos, pas la paraphrase vers à vers.'},
+    contexte:{type:'string',description:"Contexte de création : époque, album, circonstances, place dans l'oeuvre de l'artiste, accueil du public. Un ou deux paragraphes séparés par un retour à la ligne. Ne donne que ce dont tu es sûr."},
+    lecture:{type:'string',description:"Explication de texte : thèmes, images et métaphores marquantes, progression du texte, ton et point de vue du narrateur, éventuelles lectures possibles. Trois à six paragraphes séparés par des retours à la ligne."},
+    anecdotes:{type:'array',description:"Deux à quatre anecdotes établies sur l'artiste ou sur la genèse du morceau, chacune en une ou deux phrases. Tableau vide plutôt qu'une anecdote incertaine.",items:{type:'string'}},
+    langue:{type:'string',description:"Ce que la chanson apprend de la langue anglaise : registre, tournures orales ou poétiques, licences, expressions idiomatiques notables, accent ou prononciation chantée. Un à trois paragraphes, pour un francophone qui apprend."},
+    aRetenir:{type:'array',description:'Trois à cinq points à retenir, formulés en une ligne chacun.',items:{type:'string'}},
+    incertain:{type:'string',description:"Ce que tu ne sais pas avec certitude sur ce texte ou cet artiste et qu'il vaut mieux vérifier. Vide si tout ce que tu avances est solidement établi."}
+  }};
+
 const SCHEMA_TRAD={type:'object',additionalProperties:false,required:['lignes'],
   properties:{lignes:{type:'array',items:{type:'object',additionalProperties:false,required:['n','fr'],
     properties:{n:{type:'integer',description:'Numéro du vers tel que fourni'},fr:{type:'string',description:'Traduction française du vers'}}}}}};
+window.analyseTexte=async function(refaire){
+  const t=etat.textes.find(x=>x.id===lectureId); if(!t) return;
+  if(t.analyse && !refaire){ ficheAnalyse(); return; }
+  if(!cleIA()){ toast('Ajoute ta clé API dans Réglages pour utiliser l\'IA', 3800); return; }
+  toast('Commentaire en cours de rédaction…', 90000);
+  const sys=[
+    "Tu commentes une chanson ou un poème anglais pour un francophone adulte, cultivé, qui l'étudie pour progresser en anglais.",
+    "Tu écris en français, d'un ton vivant mais sobre : ni fiche scolaire, ni article promotionnel.",
+    "Exigence de vérité : n'avance que des faits établis. Une date, un album, une anecdote dont tu n'es pas sûr n'a pas sa place ; signale-le dans le champ prévu plutôt que d'inventer.",
+    "Si le texte fourni ne correspond pas au titre annoncé, dis-le dans ce même champ.",
+    "L'explication de texte est le coeur : appuie-toi sur des vers précis, cite-les en anglais entre guillemets."
+  ].join('\n');
+  const msg=[ t.titre? 'Titre : '+t.titre:'', t.auteur? 'Artiste ou auteur : '+t.auteur:'',
+    'Type : '+(t.type==='poeme'?'poème':'chanson'), '', 'Texte :', t.texte ].filter(x=>x!=='' || true).join('\n');
+  try{
+    const o=await appelIA(sys,msg,SCHEMA_ANALYSE,'high');
+    t.analyse={ sujet:o.sujet||'', contexte:o.contexte||'', lecture:o.lecture||'',
+      anecdotes:o.anecdotes||[], langue:o.langue||'', aRetenir:o.aRetenir||[], incertain:o.incertain||'', date:Date.now() };
+    persister(); rendre(); ficheAnalyse();
+    toast('Commentaire enregistré');
+  }catch(e){ toast('IA : '+e.message, 5000); }
+};
+function paras(txt){ return String(txt||'').split(/\n+/).filter(Boolean).map(p=>'<p>'+echap(p)+'</p>').join(''); }
+window.ficheAnalyse=function(){
+  const t=etat.textes.find(x=>x.id===lectureId); if(!t||!t.analyse) return;
+  const a=t.analyse;
+  let h='<div class="m-titre"><span>🎓 '+echap(t.titre||'Commentaire')+'</span><button onclick="fermer(\'v-analyse\')">×</button></div>';
+  if(t.auteur) h+='<div class="note" style="margin:-6px 0 10px">'+echap(t.auteur)+'</div>';
+  if(a.sujet) h+='<div class="carte" style="background:var(--accent-soft);border-color:var(--accent-soft);box-shadow:none"><div class="expl">'+paras(a.sujet)+'</div></div>';
+  if(a.contexte){ h+='<div class="titre-sec">Contexte</div><div class="expl">'+paras(a.contexte)+'</div>'; }
+  if(a.lecture){ h+='<div class="titre-sec">Explication du texte</div><div class="expl">'+paras(a.lecture)+'</div>'; }
+  if((a.anecdotes||[]).length){ h+='<div class="titre-sec">Anecdotes</div>'+
+    a.anecdotes.map(x=>'<div class="ex" style="border-left-color:var(--violet)"><div class="en"><span>'+echap(x)+'</span></div></div>').join(''); }
+  if(a.langue){ h+='<div class="titre-sec">La langue de ce texte</div><div class="expl">'+paras(a.langue)+'</div>'; }
+  if((a.aRetenir||[]).length){ h+='<div class="titre-sec">À retenir</div><div class="carte" style="box-shadow:none">'+
+    a.aRetenir.map(x=>'<div class="trad-l"><b style="font-size:14px;font-weight:500">• '+echap(x)+'</b></div>').join('')+'</div>'; }
+  if(a.incertain) h+='<div class="note" style="margin-top:10px;background:var(--amber-soft);color:var(--amber);padding:9px 11px;border-radius:9px">⚠️ À vérifier : '+echap(a.incertain)+'</div>';
+  h+='<div class="note" style="margin-top:10px">Commentaire rédigé par l\'IA : fiable sur le texte, à recouper sur les faits biographiques.</div>'+
+     '<div class="sep"></div><div class="rang">'+
+     '<button class="btn sec pt" onclick="fermer(\'v-analyse\');analyseTexte(true)">↻ Refaire</button>'+
+     '<button class="btn dan pt" onclick="supprimerAnalyse()">Supprimer</button></div>';
+  $('analyse-corps').innerHTML=h; ouvrir('v-analyse');
+};
+window.supprimerAnalyse=function(){
+  const t=etat.textes.find(x=>x.id===lectureId); if(!t) return;
+  if(!confirm('Supprimer ce commentaire ?')) return;
+  t.analyse=null; persister(); fermer('v-analyse'); rendre();
+};
+
 window.traduireTexte=async function(){
   const t=etat.textes.find(x=>x.id===lectureId); if(!t) return;
   /* La traduction est conservée : le bouton ne fait qu'alterner les deux versions */
