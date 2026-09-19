@@ -185,6 +185,14 @@ main{max-width:880px;margin:0 auto;padding:14px 14px 30px}
 .lecteur-tete a{font-size:11.5px;font-weight:600;color:var(--accent);text-decoration:none;flex:none}
 .lecteur-tete button{font-size:20px;line-height:.8;color:var(--muted);padding:0 4px;flex:none}
 .lecteur iframe{display:block;width:100%;height:80px;border:0;border-radius:12px}
+.lecteur .yt{position:relative;width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#000;transition:max-width .2s}
+.lecteur .yt iframe,.lecteur .yt>div{position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:12px}
+.lecteur.reduit .corps{display:flex;gap:11px;align-items:center}
+.lecteur.reduit .yt{width:132px;flex:none}
+.lecteur.reduit #lecteur-cadre{flex:none}
+.lecteur.reduit .sp-cmd{flex:1;min-width:0;margin-top:0}
+.lecteur.reduit .sp-btns button{padding:7px 4px;font-size:12px}
+.lecteur-tete .src{font-size:11.5px;font-weight:600;color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:3px 9px;flex:none}
 .sp-cmd{display:none;margin-top:8px}
 .sp-cmd.on{display:block}
 .sp-ligne{display:flex;align-items:center;gap:9px}
@@ -197,9 +205,16 @@ main{max-width:880px;margin:0 auto;padding:14px 14px 30px}
 .sp-btns{display:flex;gap:7px;margin-top:7px}
 .sp-btns button{flex:1;background:#EEF1F5;color:var(--ink);border-radius:10px;padding:9px 6px;font-size:13px;font-weight:600}
 .sp-btns button.pp{background:var(--accent);color:#fff;flex:1.3}
+.yt-cmd{display:none;gap:6px;margin-top:7px;align-items:center;flex-wrap:wrap}
+.yt-cmd.on{display:flex}
+.yt-cmd .lbl{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.chip{font-size:12.5px;font-weight:600;padding:5px 10px;border-radius:999px;background:#EEF1F5;color:var(--muted)}
+.chip.act{background:var(--ink);color:#fff}
+#yt-boucle{margin-left:auto;background:var(--amber-soft);color:var(--amber)}
+#yt-boucle.act{background:var(--amber);color:#fff}
 .sp-btns button:disabled{opacity:.45}
-body.avec-lecteur{padding-bottom:calc(180px + env(safe-area-inset-bottom))}
-@media(min-width:720px){body.avec-lecteur{padding-bottom:130px}}
+body.avec-lecteur{padding-bottom:calc(var(--h-lecteur,180px) + 76px + env(safe-area-inset-bottom))}
+@media(min-width:720px){body.avec-lecteur{padding-bottom:calc(var(--h-lecteur,130px) + 24px)}}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom));background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-size:13.5px;font-weight:500;z-index:200;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;text-align:center}
 #toast.on{opacity:1}
 .chargement{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:tourne .7s linear infinite}
@@ -231,7 +246,12 @@ body.avec-lecteur{padding-bottom:calc(180px + env(safe-area-inset-bottom))}
 <main id="main"></main>
 
 <div class="lecteur" id="lecteur">
-  <div class="lecteur-tete"><b id="lecteur-titre"></b><a id="lecteur-lien" target="_blank" rel="noopener">Ouvrir dans Spotify ↗</a><button id="lecteur-x" aria-label="Fermer le lecteur">×</button></div>
+  <div class="lecteur-tete"><b id="lecteur-titre"></b>
+    <button class="src" id="lecteur-src" style="display:none"></button>
+    <a id="lecteur-lien" target="_blank" rel="noopener">Ouvrir ↗</a>
+    <button id="lecteur-reduire" aria-label="Réduire le lecteur">▾</button>
+    <button id="lecteur-x" aria-label="Fermer le lecteur">×</button></div>
+  <div class="corps" id="lecteur-corps">
   <div id="lecteur-cadre"></div>
   <div class="sp-cmd" id="sp-cmd">
     <div class="sp-ligne"><span class="sp-t" id="sp-t1">0:00</span>
@@ -242,6 +262,14 @@ body.avec-lecteur{padding-bottom:calc(180px + env(safe-area-inset-bottom))}
       <button id="sp-play" class="pp">▶ Lire</button>
       <button id="sp-plus">10 s ↻</button>
     </div>
+    <div class="yt-cmd" id="yt-cmd">
+      <span class="lbl">Vitesse</span>
+      <button class="chip" data-v="0.5">0,5×</button>
+      <button class="chip" data-v="0.75">0,75×</button>
+      <button class="chip act" data-v="1">1×</button>
+      <button class="chip" id="yt-boucle">🔁 Boucle A–B</button>
+    </div>
+  </div>
   </div>
 </div>
 
@@ -414,7 +442,8 @@ window.formTexte=function(id){
     '<label>Auteur / interprète</label><input id="f-auteur" value="'+echap(t?t.auteur:'')+'" placeholder="The Beatles">'+
     '<label>Type</label><select id="f-type"><option value="chanson"'+(t&&t.type==='poeme'?'':' selected')+'>Chanson</option><option value="poeme"'+(t&&t.type==='poeme'?' selected':'')+'>Poème</option></select>'+
     '<label>Lien Spotify (facultatif)</label><input id="f-spotify" value="'+echap(t?(t.spotify||''):'')+'" placeholder="https://open.spotify.com/track/…" autocapitalize="off" autocorrect="off" spellcheck="false">'+
-    '<div class="note" style="margin-top:5px">Dans Spotify : ⋯ → Partager → Copier le lien. Le morceau s\'écoute alors depuis LYRA, sans quitter l\'app.</div>'+
+    '<label>Lien YouTube (facultatif)</label><input id="f-youtube" value="'+echap(t?(t.youtube||''):'')+'" placeholder="https://www.youtube.com/watch?v=…" autocapitalize="off" autocorrect="off" spellcheck="false">'+
+    '<div class="note" style="margin-top:5px">Les deux sont facultatifs et peuvent coexister. YouTube joue le morceau en entier sans connexion et donne la vitesse réduite et la boucle A–B ; Spotify a le meilleur son mais se limite souvent à 30 secondes.</div>'+
     '<label>Texte en anglais</label><textarea id="f-texte" rows="12" placeholder="Colle ici les paroles…">'+echap(t?t.texte:'')+'</textarea>'+
     '<div class="rang" style="margin-top:14px"><button class="btn" style="flex:1" onclick="enregistrerTexte(\''+(id||'')+'\')">Enregistrer</button>'+
     (t?'<button class="btn dan" onclick="supprimerTexte(\''+id+'\')">Supprimer</button>':'')+'</div>';
@@ -424,15 +453,16 @@ window.formTexte=function(id){
 window.enregistrerTexte=function(id){
   const titre=$('f-titre').value.trim(), auteur=$('f-auteur').value.trim(),
         type=$('f-type').value, texte=$('f-texte').value.replace(/\r/g,''),
-        spotify=$('f-spotify').value.trim();
+        spotify=$('f-spotify').value.trim(), youtube=$('f-youtube').value.trim();
   if(!texte.trim()){ toast('Le texte est vide'); return; }
   if(spotify && !spotifyEmbed(spotify)){ toast('Lien Spotify non reconnu — copie le lien depuis Partager', 4000); return; }
+  if(youtube && !ytId(youtube)){ toast('Lien YouTube non reconnu — copie le lien depuis Partager', 4000); return; }
   if(id){
     const t=etat.textes.find(x=>x.id===id);
-    Object.assign(t,{titre:titre,auteur:auteur,type:type,spotify:spotify});
+    Object.assign(t,{titre:titre,auteur:auteur,type:type,spotify:spotify,youtube:youtube});
     if(t.texte!==texte){ t.texte=texte; t.trad=null; t.voirTrad=false; }
   }else{
-    const t={id:uid(),titre:titre||'Sans titre',auteur:auteur,type:type,texte:texte,spotify:spotify,trad:null,voirTrad:false,cree:Date.now()};
+    const t={id:uid(),titre:titre||'Sans titre',auteur:auteur,type:type,texte:texte,spotify:spotify,youtube:youtube,trad:null,voirTrad:false,cree:Date.now()};
     etat.textes.push(t); lectureId=t.id;
   }
   persister(); fermer('v-form'); rendre();
@@ -461,14 +491,26 @@ function spotifyUri(u){
   const m=e.match(/embed\/([a-z]+)\/([A-Za-z0-9]+)$/);
   return m? 'spotify:'+m[1]+':'+m[2] : null;
 }
-/* L'API iframe de Spotify donne la main sur la lecture : position,
-   pause et surtout déplacement dans le morceau, que le lecteur intégré
-   seul ne propose pas. */
-let apiSpot=null, promesseApi=null;
+function ytId(u){
+  const t=String(u||'').trim();
+  let m=t.match(/^https?:\/\/(?:www\.|m\.|music\.)?youtube\.com\/watch\?(?:[^#\s]*&)?v=([A-Za-z0-9_-]{11})/);
+  if(!m) m=t.match(/^https?:\/\/youtu\.be\/([A-Za-z0-9_-]{11})/);
+  if(!m) m=t.match(/^https?:\/\/(?:www\.)?youtube\.com\/(?:shorts|embed|live)\/([A-Za-z0-9_-]{11})/);
+  if(!m) m=t.match(/^([A-Za-z0-9_-]{11})$/);
+  return m? m[1] : null;
+}
+function sourcesDe(t){ const l=[]; if(t&&ytId(t.youtube)) l.push('youtube'); if(t&&spotifyEmbed(t.spotify)) l.push('spotify'); return l; }
+
+let lecteurTexteId=null, moteur=null, glisse=false, vitesse=1;
+const spot={p:0,d:0,pause:true};
+const boucle={a:null,b:null};
+
+/* ---------- Spotify ---------- */
+let apiSpot=null, promesseSpot=null, ctlSpot=null, secSpot=null, cibleSeek=null;
 function chargerApiSpotify(){
   if(apiSpot) return Promise.resolve(apiSpot);
-  if(promesseApi) return promesseApi;
-  promesseApi=new Promise((ok,ko)=>{
+  if(promesseSpot) return promesseSpot;
+  promesseSpot=new Promise((ok,ko)=>{
     window.onSpotifyIframeApiReady=API=>{ apiSpot=API; ok(API); };
     const sc=document.createElement('script');
     sc.src='https://open.spotify.com/embed/iframe-api/v1'; sc.async=true;
@@ -476,78 +518,169 @@ function chargerApiSpotify(){
     document.head.appendChild(sc);
     setTimeout(()=>{ if(!apiSpot) ko(new Error('délai dépassé')); }, 8000);
   });
-  return promesseApi;
-}
-let lecteurTexteId=null, ctlSpot=null, glisse=false, secSpot=null;
-const spot={p:0,d:0,pause:true};
-function mmss(ms){ const s=Math.max(0,Math.round((ms||0)/1000)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
-function majCmdSpot(){
-  if(!glisse) $('sp-barre').value = spot.d? Math.round(1000*spot.p/spot.d) : 0;
-  $('sp-t1').textContent=mmss(spot.p); $('sp-t2').textContent=mmss(spot.d);
-  $('sp-play').textContent = spot.pause? '▶ Lire':'⏸ Pause';
-}
-/* seek() attend des secondes ; si ce lecteur attendait des millisecondes,
-   le premier déplacement le révèle et la conversion est corrigée. */
-let cibleSeek=null;
-function seekSpot(ms){
-  if(!ctlSpot) return;
-  const cible=Math.max(0, Math.min((spot.d||0)-600, ms));
-  cibleSeek=cible;
-  ctlSpot.seek(secSpot===false? cible : cible/1000);
-  spot.p=cible; majCmdSpot();
+  return promesseSpot;
 }
 function surLecture(e){
   const d=(e&&e.data)||{};
-  const enMs = (d.duration||0)>1000;
+  const enMs=(d.duration||0)>1000;
   spot.d = enMs? (d.duration||0) : (d.duration||0)*1000;
   spot.p = enMs? (d.position||0) : (d.position||0)*1000;
   spot.pause = !!d.isPaused;
   if(cibleSeek!=null && secSpot===null){
     const ecart=Math.abs(spot.p-cibleSeek);
-    /* position restée près de zéro alors qu'on visait plus loin : l'unité était fausse */
     if(cibleSeek>5000 && ecart>5000 && spot.p<cibleSeek/100+2000){ secSpot=false; ctlSpot.seek(cibleSeek); }
     else if(ecart<5000){ secSpot=true; }
     cibleSeek=null;
   }
-  majCmdSpot();
+  majCmd();
 }
-window.ouvrirLecteur=function(id){
+
+/* ---------- YouTube : lecture intégrale sans connexion, vitesse et boucle ---------- */
+let apiYt=null, promesseYt=null, ctlYt=null, minuteurYt=null;
+function chargerApiYt(){
+  if(apiYt) return Promise.resolve(apiYt);
+  if(promesseYt) return promesseYt;
+  promesseYt=new Promise((ok,ko)=>{
+    window.onYouTubeIframeAPIReady=()=>{ apiYt=window.YT; ok(window.YT); };
+    const sc=document.createElement('script');
+    sc.src='https://www.youtube.com/iframe_api'; sc.async=true;
+    sc.onerror=()=>ko(new Error('script indisponible'));
+    document.head.appendChild(sc);
+    setTimeout(()=>{ if(!apiYt) ko(new Error('délai dépassé')); }, 8000);
+  });
+  return promesseYt;
+}
+function tickYt(){
+  if(!ctlYt || !ctlYt.getCurrentTime) return;
+  try{
+    spot.p=(ctlYt.getCurrentTime()||0)*1000;
+    spot.d=(ctlYt.getDuration()||0)*1000;
+    spot.pause = ctlYt.getPlayerState? ctlYt.getPlayerState()!==1 : true;
+    /* Boucle A–B : on repart de A dès que B est franchi */
+    if(boucle.a!=null && boucle.b!=null && spot.p>=boucle.b){ ctlYt.seekTo(boucle.a/1000,true); spot.p=boucle.a; }
+    majCmd();
+  }catch(x){}
+}
+
+/* ---------- Commandes communes aux deux lecteurs ---------- */
+function mmss(ms){ const s=Math.max(0,Math.round((ms||0)/1000)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+function majCmd(){
+  if(!$('sp-barre')) return;
+  if(!glisse) $('sp-barre').value = spot.d? Math.round(1000*spot.p/spot.d) : 0;
+  $('sp-t1').textContent=mmss(spot.p); $('sp-t2').textContent=mmss(spot.d);
+  $('sp-play').textContent = spot.pause? '▶ Lire':'⏸ Pause';
+  $('yt-cmd').classList.toggle('on', moteur==='youtube');
+  document.querySelectorAll('#yt-cmd .chip[data-v]').forEach(b=>b.classList.toggle('act', Number(b.dataset.v)===vitesse));
+  const bb=$('yt-boucle');
+  if(bb){
+    if(boucle.a==null){ bb.textContent='🔁 Boucle A–B'; bb.classList.remove('act'); }
+    else if(boucle.b==null){ bb.textContent='A '+mmss(boucle.a)+' → ?'; bb.classList.add('act'); }
+    else { bb.textContent='🔁 '+mmss(boucle.a)+' – '+mmss(boucle.b); bb.classList.add('act'); }
+  }
+}
+function cmdLecture(){
+  if(moteur==='youtube' && ctlYt){ if(ctlYt.getPlayerState && ctlYt.getPlayerState()===1) ctlYt.pauseVideo(); else ctlYt.playVideo(); }
+  else if(ctlSpot) ctlSpot.togglePlay();
+}
+/* seek() de Spotify attend des secondes ; si ce lecteur comptait en
+   millisecondes, le premier déplacement le révèle et corrige l'unité. */
+function cmdSeek(ms){
+  const cible=Math.max(0, Math.min((spot.d||0)-600, ms));
+  if(moteur==='youtube'){ if(!ctlYt) return; ctlYt.seekTo(cible/1000,true); spot.p=cible; majCmd(); return; }
+  if(!ctlSpot) return;
+  cibleSeek=cible;
+  ctlSpot.seek(secSpot===false? cible : cible/1000);
+  spot.p=cible; majCmd();
+}
+function cmdVitesse(v){
+  vitesse=v;
+  if(moteur==='youtube' && ctlYt && ctlYt.setPlaybackRate) ctlYt.setPlaybackRate(v);
+  majCmd();
+}
+function cmdBoucle(){
+  if(moteur!=='youtube'){ toast('La boucle A–B demande le lecteur YouTube'); return; }
+  if(boucle.a==null){ boucle.a=spot.p; toast('Début de boucle à '+mmss(boucle.a)+' — appuie encore pour la fin'); }
+  else if(boucle.b==null){
+    if(spot.p>boucle.a+1000){ boucle.b=spot.p; cmdSeek(boucle.a); toast('Boucle '+mmss(boucle.a)+' – '+mmss(boucle.b)+' — on repart du début'); }
+    else { boucle.a=spot.p; toast('Début de boucle déplacé à '+mmss(boucle.a)); }
+  }
+  else { boucle.a=null; boucle.b=null; toast('Boucle annulée'); }
+  majCmd();
+}
+function nettoyerLecteur(){
+  if(minuteurYt){ clearInterval(minuteurYt); minuteurYt=null; }
+  if(ctlYt){ try{ ctlYt.destroy(); }catch(x){} ctlYt=null; }
+  if(ctlSpot){ try{ ctlSpot.destroy(); }catch(x){} ctlSpot=null; }
+  secSpot=null; cibleSeek=null; boucle.a=null; boucle.b=null; vitesse=1;
+  spot.p=0; spot.d=0; spot.pause=true;
+}
+/* La hauteur du lecteur varie selon la source : on la reporte au bas de page */
+function majEspace(){
+  const l=$('lecteur');
+  document.body.style.setProperty('--h-lecteur', (l.classList.contains('on')? l.offsetHeight:0)+'px');
+}
+window.ouvrirLecteur=function(id, source){
   const t=etat.textes.find(x=>x.id===(id||lectureId));
-  if(!t || !t.spotify) return;
-  const src=spotifyEmbed(t.spotify), uri=spotifyUri(t.spotify);
-  if(!src){ toast('Lien Spotify non reconnu'); return; }
-  if(lecteurTexteId!==t.id){
-    lecteurTexteId=t.id;
+  if(!t) return;
+  const dispo=sourcesDe(t);
+  if(!dispo.length) return;
+  const src = (source && dispo.indexOf(source)>=0)? source : (dispo.indexOf(t.source)>=0? t.source : dispo[0]);
+  if(lecteurTexteId!==t.id || moteur!==src){
+    lecteurTexteId=t.id; moteur=src; t.source=src; persister();
+    nettoyerLecteur();
     $('lecteur-titre').textContent=t.titre||'';
-    $('lecteur-lien').href=t.spotify;
-    spot.p=0; spot.d=0; spot.pause=true; cibleSeek=null; majCmdSpot();
-    if(ctlSpot){ try{ ctlSpot.destroy(); }catch(x){} ctlSpot=null; }
-    $('lecteur-cadre').innerHTML='<div id="sp-hote"></div>';
+    $('lecteur-lien').href = src==='youtube'? t.youtube : t.spotify;
+    $('lecteur-lien').textContent = (src==='youtube'? 'Ouvrir dans YouTube':'Ouvrir dans Spotify')+' ↗';
+    const autre = dispo.filter(x=>x!==src)[0];
+    $('lecteur-src').style.display = autre? '':'none';
+    $('lecteur-src').textContent = autre==='youtube'? '▶ YouTube':'♫ Spotify';
+    $('lecteur-src').onclick = autre? (()=>ouvrirLecteur(t.id, autre)) : null;
     $('sp-cmd').classList.remove('on');
-    chargerApiSpotify().then(API=>{
-      if(lecteurTexteId!==t.id || !$('sp-hote')) return;
-      API.createController($('sp-hote'), {uri:uri, width:'100%', height:80}, ctl=>{
-        ctlSpot=ctl;
-        ctl.addListener('playback_update', surLecture);
-        $('sp-cmd').classList.add('on');
+    majCmd();
+    if(src==='youtube'){
+      $('lecteur-cadre').innerHTML='<div class="yt"><div id="yt-hote"></div></div>';
+      chargerApiYt().then(YT=>{
+        if(lecteurTexteId!==t.id || moteur!=='youtube' || !$('yt-hote')) return;
+        const vars={playsinline:1, rel:0, modestbranding:1};
+        if(location.protocol.indexOf('http')===0) vars.origin=location.origin;
+        ctlYt=new YT.Player('yt-hote', { videoId:ytId(t.youtube), playerVars:vars,
+          events:{ onReady:()=>{ $('sp-cmd').classList.add('on'); tickYt(); majEspace(); },
+                   onStateChange:()=>tickYt() } });
+        if(minuteurYt) clearInterval(minuteurYt);
+        minuteurYt=setInterval(tickYt, 250);
+      }).catch(()=>{
+        if(lecteurTexteId!==t.id) return;
+        $('lecteur-cadre').innerHTML='<div class="yt"><iframe src="https://www.youtube.com/embed/'+echap(ytId(t.youtube))+'" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>';
+        $('sp-cmd').classList.remove('on'); majEspace();
       });
-    }).catch(()=>{
-      /* Sans l'API, on retombe sur le lecteur intégré, avec sa propre
-         barre de progression dans sa version haute. */
-      if(lecteurTexteId!==t.id) return;
-      $('lecteur-cadre').innerHTML='<iframe src="'+echap(src)+'" style="height:152px" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>';
-      $('sp-cmd').classList.remove('on');
-    });
+    }else{
+      const lien=spotifyEmbed(t.spotify);
+      $('lecteur-cadre').innerHTML='<div id="sp-hote"></div>';
+      chargerApiSpotify().then(API=>{
+        if(lecteurTexteId!==t.id || moteur!=='spotify' || !$('sp-hote')) return;
+        API.createController($('sp-hote'), {uri:spotifyUri(t.spotify), width:'100%', height:80}, ctl=>{
+          ctlSpot=ctl; ctl.addListener('playback_update', surLecture);
+          $('sp-cmd').classList.add('on'); majEspace();
+        });
+      }).catch(()=>{
+        if(lecteurTexteId!==t.id) return;
+        $('lecteur-cadre').innerHTML='<iframe src="'+echap(lien)+'" style="height:152px" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>';
+        $('sp-cmd').classList.remove('on'); majEspace();
+      });
+    }
   }
   $('lecteur').classList.add('on');
   document.body.classList.add('avec-lecteur');
+  majEspace();
 };
 window.fermerLecteur=function(){
   $('lecteur').classList.remove('on');
   document.body.classList.remove('avec-lecteur');
-  if(ctlSpot){ try{ ctlSpot.destroy(); }catch(x){} ctlSpot=null; }
-  $('lecteur-cadre').innerHTML=''; $('sp-cmd').classList.remove('on'); lecteurTexteId=null;
+  nettoyerLecteur();
+  $('lecteur-cadre').innerHTML=''; $('sp-cmd').classList.remove('on');
+  lecteurTexteId=null; moteur=null; majEspace();
 };
+
 window.retourTextes=function(){ lectureId=null; rendre(); };
 
 /* ---------- Découpage du texte en mots cliquables ---------- */
@@ -583,7 +716,7 @@ function vueLecture(){
     '<button class="btn sec pt" onclick="lireTexte()">🔊 Écouter</button>'+
     '<button class="btn '+(t.trad&&t.voirTrad?'':'sec ')+'pt" onclick="traduireTexte()">'+
       (!t.trad? '🈯 Traduire (IA)' : t.voirTrad? '🇬🇧 Version anglaise' : '🇫🇷 Version traduite')+'</button>'+
-    (t.spotify? '<button class="btn sec pt" onclick="ouvrirLecteur()">🎧 Écouter le titre</button>':'')+
+    (sourcesDe(t).length? '<button class="btn sec pt" onclick="ouvrirLecteur()">🎧 Écouter le titre</button>':'')+
     '<button class="btn sec pt" onclick="analyseTexte()">🎓 '+(t.analyse?'Commentaire':'Commenter (IA)')+'</button>'+
     (aFaire?'<button class="btn pt" onclick="enrichirLot(\''+t.id+'\')">✨ Enrichir '+aFaire+' mot'+(aFaire>1?'s':'')+'</button>':'')+
     '<button class="btn gris pt" onclick="formTexte(\''+t.id+'\')">✎</button>'+
@@ -642,11 +775,19 @@ function majBarreEnrichir(){
   if(cible) cible.textContent='✨ Enrichir '+aFaire+' mot'+(aFaire>1?'s':'');
 }
 $('lecteur-x').onclick=fermerLecteur;
-$('sp-play').onclick=()=>{ if(ctlSpot) ctlSpot.togglePlay(); };
-$('sp-moins').onclick=()=>seekSpot((spot.p||0)-10000);
-$('sp-plus').onclick=()=>seekSpot((spot.p||0)+10000);
+$('lecteur-reduire').onclick=function(){
+  const l=$('lecteur'); l.classList.toggle('reduit');
+  this.textContent=l.classList.contains('reduit')? '▴':'▾';
+  setTimeout(majEspace,220);
+};
+$('sp-play').onclick=cmdLecture;
+$('sp-moins').onclick=()=>cmdSeek((spot.p||0)-10000);
+$('sp-plus').onclick=()=>cmdSeek((spot.p||0)+10000);
 $('sp-barre').oninput=function(){ glisse=true; $('sp-t1').textContent=mmss((spot.d||0)*this.value/1000); };
-$('sp-barre').onchange=function(){ glisse=false; seekSpot((spot.d||0)*this.value/1000); };
+$('sp-barre').onchange=function(){ glisse=false; cmdSeek((spot.d||0)*this.value/1000); };
+document.querySelectorAll('#yt-cmd .chip[data-v]').forEach(b=>b.onclick=()=>cmdVitesse(Number(b.dataset.v)));
+$('yt-boucle').onclick=cmdBoucle;
+window.addEventListener('resize', majEspace);
 $('sel-mot').onclick=function(){
   const sel=($('selbar')._sel||'').trim(), li=$('selbar')._l;
   if(!sel) return;
