@@ -185,6 +185,19 @@ main{max-width:880px;margin:0 auto;padding:14px 14px 30px}
 .lecteur-tete a{font-size:11.5px;font-weight:600;color:var(--accent);text-decoration:none;flex:none}
 .lecteur-tete button{font-size:20px;line-height:.8;color:var(--muted);padding:0 4px;flex:none}
 .lecteur iframe{display:block;width:100%;height:80px;border:0;border-radius:12px}
+.sp-cmd{display:none;margin-top:8px}
+.sp-cmd.on{display:block}
+.sp-ligne{display:flex;align-items:center;gap:9px}
+.sp-t{font-family:'IBM Plex Mono';font-size:11px;color:var(--muted);flex:none;min-width:34px;text-align:center}
+#sp-barre{-webkit-appearance:none;appearance:none;flex:1;height:22px;padding:0;border:0;background:none;accent-color:var(--accent);cursor:pointer}
+#sp-barre::-webkit-slider-runnable-track{height:6px;border-radius:99px;background:var(--line)}
+#sp-barre::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;border-radius:50%;background:var(--accent);margin-top:-5.5px;box-shadow:0 1px 3px rgba(22,34,46,.3)}
+#sp-barre::-moz-range-track{height:6px;border-radius:99px;background:var(--line)}
+#sp-barre::-moz-range-thumb{width:17px;height:17px;border:0;border-radius:50%;background:var(--accent)}
+.sp-btns{display:flex;gap:7px;margin-top:7px}
+.sp-btns button{flex:1;background:#EEF1F5;color:var(--ink);border-radius:10px;padding:9px 6px;font-size:13px;font-weight:600}
+.sp-btns button.pp{background:var(--accent);color:#fff;flex:1.3}
+.sp-btns button:disabled{opacity:.45}
 body.avec-lecteur{padding-bottom:calc(180px + env(safe-area-inset-bottom))}
 @media(min-width:720px){body.avec-lecteur{padding-bottom:130px}}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom));background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-size:13.5px;font-weight:500;z-index:200;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;text-align:center}
@@ -220,6 +233,16 @@ body.avec-lecteur{padding-bottom:calc(180px + env(safe-area-inset-bottom))}
 <div class="lecteur" id="lecteur">
   <div class="lecteur-tete"><b id="lecteur-titre"></b><a id="lecteur-lien" target="_blank" rel="noopener">Ouvrir dans Spotify ↗</a><button id="lecteur-x" aria-label="Fermer le lecteur">×</button></div>
   <div id="lecteur-cadre"></div>
+  <div class="sp-cmd" id="sp-cmd">
+    <div class="sp-ligne"><span class="sp-t" id="sp-t1">0:00</span>
+      <input type="range" id="sp-barre" min="0" max="1000" value="0" step="1" aria-label="Position dans le morceau">
+      <span class="sp-t" id="sp-t2">0:00</span></div>
+    <div class="sp-btns">
+      <button id="sp-moins">↺ 10 s</button>
+      <button id="sp-play" class="pp">▶ Lire</button>
+      <button id="sp-plus">10 s ↻</button>
+    </div>
+  </div>
 </div>
 
 <div class="selbar" id="selbar">
@@ -433,17 +456,88 @@ function spotifyEmbed(u){
   if(!m) m=t.match(/^https?:\/\/open\.spotify\.com\/(?:intl-[a-z-]+\/)?(track|album|playlist|episode|show)\/([A-Za-z0-9]+)/);
   return m? 'https://open.spotify.com/embed/'+m[1]+'/'+m[2] : null;
 }
-let lecteurTexteId=null;
+function spotifyUri(u){
+  const e=spotifyEmbed(u); if(!e) return null;
+  const m=e.match(/embed\/([a-z]+)\/([A-Za-z0-9]+)$/);
+  return m? 'spotify:'+m[1]+':'+m[2] : null;
+}
+/* L'API iframe de Spotify donne la main sur la lecture : position,
+   pause et surtout déplacement dans le morceau, que le lecteur intégré
+   seul ne propose pas. */
+let apiSpot=null, promesseApi=null;
+function chargerApiSpotify(){
+  if(apiSpot) return Promise.resolve(apiSpot);
+  if(promesseApi) return promesseApi;
+  promesseApi=new Promise((ok,ko)=>{
+    window.onSpotifyIframeApiReady=API=>{ apiSpot=API; ok(API); };
+    const sc=document.createElement('script');
+    sc.src='https://open.spotify.com/embed/iframe-api/v1'; sc.async=true;
+    sc.onerror=()=>ko(new Error('script indisponible'));
+    document.head.appendChild(sc);
+    setTimeout(()=>{ if(!apiSpot) ko(new Error('délai dépassé')); }, 8000);
+  });
+  return promesseApi;
+}
+let lecteurTexteId=null, ctlSpot=null, glisse=false, secSpot=null;
+const spot={p:0,d:0,pause:true};
+function mmss(ms){ const s=Math.max(0,Math.round((ms||0)/1000)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+function majCmdSpot(){
+  if(!glisse) $('sp-barre').value = spot.d? Math.round(1000*spot.p/spot.d) : 0;
+  $('sp-t1').textContent=mmss(spot.p); $('sp-t2').textContent=mmss(spot.d);
+  $('sp-play').textContent = spot.pause? '▶ Lire':'⏸ Pause';
+}
+/* seek() attend des secondes ; si ce lecteur attendait des millisecondes,
+   le premier déplacement le révèle et la conversion est corrigée. */
+let cibleSeek=null;
+function seekSpot(ms){
+  if(!ctlSpot) return;
+  const cible=Math.max(0, Math.min((spot.d||0)-600, ms));
+  cibleSeek=cible;
+  ctlSpot.seek(secSpot===false? cible : cible/1000);
+  spot.p=cible; majCmdSpot();
+}
+function surLecture(e){
+  const d=(e&&e.data)||{};
+  const enMs = (d.duration||0)>1000;
+  spot.d = enMs? (d.duration||0) : (d.duration||0)*1000;
+  spot.p = enMs? (d.position||0) : (d.position||0)*1000;
+  spot.pause = !!d.isPaused;
+  if(cibleSeek!=null && secSpot===null){
+    const ecart=Math.abs(spot.p-cibleSeek);
+    /* position restée près de zéro alors qu'on visait plus loin : l'unité était fausse */
+    if(cibleSeek>5000 && ecart>5000 && spot.p<cibleSeek/100+2000){ secSpot=false; ctlSpot.seek(cibleSeek); }
+    else if(ecart<5000){ secSpot=true; }
+    cibleSeek=null;
+  }
+  majCmdSpot();
+}
 window.ouvrirLecteur=function(id){
   const t=etat.textes.find(x=>x.id===(id||lectureId));
   if(!t || !t.spotify) return;
-  const src=spotifyEmbed(t.spotify);
+  const src=spotifyEmbed(t.spotify), uri=spotifyUri(t.spotify);
   if(!src){ toast('Lien Spotify non reconnu'); return; }
   if(lecteurTexteId!==t.id){
     lecteurTexteId=t.id;
-    $('lecteur-cadre').innerHTML='<iframe src="'+echap(src)+'" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>';
     $('lecteur-titre').textContent=t.titre||'';
     $('lecteur-lien').href=t.spotify;
+    spot.p=0; spot.d=0; spot.pause=true; cibleSeek=null; majCmdSpot();
+    if(ctlSpot){ try{ ctlSpot.destroy(); }catch(x){} ctlSpot=null; }
+    $('lecteur-cadre').innerHTML='<div id="sp-hote"></div>';
+    $('sp-cmd').classList.remove('on');
+    chargerApiSpotify().then(API=>{
+      if(lecteurTexteId!==t.id || !$('sp-hote')) return;
+      API.createController($('sp-hote'), {uri:uri, width:'100%', height:80}, ctl=>{
+        ctlSpot=ctl;
+        ctl.addListener('playback_update', surLecture);
+        $('sp-cmd').classList.add('on');
+      });
+    }).catch(()=>{
+      /* Sans l'API, on retombe sur le lecteur intégré, avec sa propre
+         barre de progression dans sa version haute. */
+      if(lecteurTexteId!==t.id) return;
+      $('lecteur-cadre').innerHTML='<iframe src="'+echap(src)+'" style="height:152px" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>';
+      $('sp-cmd').classList.remove('on');
+    });
   }
   $('lecteur').classList.add('on');
   document.body.classList.add('avec-lecteur');
@@ -451,7 +545,8 @@ window.ouvrirLecteur=function(id){
 window.fermerLecteur=function(){
   $('lecteur').classList.remove('on');
   document.body.classList.remove('avec-lecteur');
-  $('lecteur-cadre').innerHTML=''; lecteurTexteId=null;
+  if(ctlSpot){ try{ ctlSpot.destroy(); }catch(x){} ctlSpot=null; }
+  $('lecteur-cadre').innerHTML=''; $('sp-cmd').classList.remove('on'); lecteurTexteId=null;
 };
 window.retourTextes=function(){ lectureId=null; rendre(); };
 
@@ -547,6 +642,11 @@ function majBarreEnrichir(){
   if(cible) cible.textContent='✨ Enrichir '+aFaire+' mot'+(aFaire>1?'s':'');
 }
 $('lecteur-x').onclick=fermerLecteur;
+$('sp-play').onclick=()=>{ if(ctlSpot) ctlSpot.togglePlay(); };
+$('sp-moins').onclick=()=>seekSpot((spot.p||0)-10000);
+$('sp-plus').onclick=()=>seekSpot((spot.p||0)+10000);
+$('sp-barre').oninput=function(){ glisse=true; $('sp-t1').textContent=mmss((spot.d||0)*this.value/1000); };
+$('sp-barre').onchange=function(){ glisse=false; seekSpot((spot.d||0)*this.value/1000); };
 $('sel-mot').onclick=function(){
   const sel=($('selbar')._sel||'').trim(), li=$('selbar')._l;
   if(!sel) return;
